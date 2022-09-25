@@ -1,0 +1,37 @@
+num_tokens: 256 
+dim_model: 1024
+num_heads: 16
+num_encoder_layers: 9
+num_decoder_layers: 9
+dropout_p: 0.1
+feat_embedding_type: 'Conv1d'
+feat_embedding_in_channels: 512  # feat_depth, the input text feature is 768,clip is 512
+feat_embedding_out_channels: 1024  # n_embd
+feat_embedding_kernel_size: 1
+feat_embedding_padding: 0
+gpt_vocab_size: 256 # the size of codebook,
+gpt_block_size: 265  # 53*5 + 1
+gpt_n_layer: 19
+gpt_n_head: 16
+gpt_n_embd: 1024
+bs: 32
+embedding: True
+cheat: False
+transformer: 'transfboth'
+num_workers: 4
+percent: 1.0
+resume: False
+device: 'cuda'
+checkpoint_path: 'checkpoints'
+learn_rate: 0.00001
+num_epochs: 10000
+name: 'transformer_both_concat_ar_medlr'
+log_path: 'logs'
+shifted: True
+seed: 100
+lr_decay: 1.0
+l1_lw: 1.0
+gradient_clip: 0.0
+optim: 'adamw'
+audio_files_dir: '../../../../vondrick4/mia/audioset-processing/audiocaps'
+list_of_files: '../../../../vondrick4/mia/audioset-processing/audioset-processing/filtered_seg_labels.txt'
