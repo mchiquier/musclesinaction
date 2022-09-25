@@ -4,9 +4,12 @@ Data loading and processing logic.
 
 import numpy as np
 import random
-import augs
+import musclesinaction.utils.augs as augs
 import utils
-
+import pdb
+import torch
+import os
+import pathlib
 
 def _read_image_robust(img_path, no_fail=False):
     '''
@@ -52,29 +55,26 @@ def create_train_val_data_loaders(args, logger):
     '''
 
     # TODO: Figure out noaug val dataset args as well.
-    my_transform = augs.get_train_transform(args.image_dim)
+    #my_transform = augs.get_train_transform(args.image_dim)
     dset_args = dict()
-    dset_args['transform'] = my_transform
+    #dset_args['transform'] = my_transform
 
-    train_dataset = MyImageDataset(
+    train_dataset = MyMuscleDataset(
         args.data_path, logger, 'train', **dset_args)
-    val_aug_dataset = MyImageDataset(
+    val_aug_dataset = MyMuscleDataset(
         args.data_path, logger, 'val', **dset_args)
-    val_noaug_dataset = MyImageDataset(
-        args.data_path, logger, 'val', **dset_args) \
-        if args.do_val_noaug else None
+    val_noaug_dataset = MyMuscleDataset(
+        args.data_path, logger, 'val', **dset_args) 
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=args.batch_size, num_workers=args.num_workers,
+        train_dataset, batch_size=args.bs, num_workers=args.num_workers,
         shuffle=True, worker_init_fn=_seed_worker, drop_last=True, pin_memory=False)
     val_aug_loader = torch.utils.data.DataLoader(
-        val_aug_dataset, batch_size=args.batch_size, num_workers=args.num_workers,
+        val_aug_dataset, batch_size=args.bs, num_workers=args.num_workers,
         shuffle=True, worker_init_fn=_seed_worker, drop_last=True, pin_memory=False)
     val_noaug_loader = torch.utils.data.DataLoader(
-        val_noaug_dataset, batch_size=args.batch_size, num_workers=args.num_workers,
-        shuffle=True, worker_init_fn=_seed_worker, drop_last=True, pin_memory=False) \
-        if args.do_val_noaug else None
-
+        val_noaug_dataset, batch_size=args.bs, num_workers=args.num_workers,
+        shuffle=True, worker_init_fn=_seed_worker, drop_last=True, pin_memory=False) 
     return (train_loader, val_aug_loader, val_noaug_loader, dset_args)
 
 
@@ -98,7 +98,7 @@ def create_test_data_loader(train_args, test_args, train_dset_args, logger):
     return (test_loader, test_dset_args)
 
 
-class MyImageDataset(torch.utils.data.Dataset):
+class MyMuscleDataset(torch.utils.data.Dataset):
     '''
     PyTorch dataset class that returns uniformly random images of a labelled or unlabelled image
     dataset.
@@ -117,27 +117,30 @@ class MyImageDataset(torch.utils.data.Dataset):
             # We may already be pointing to a phase directory (which, in the interest of
             # flexibility, is not necessarily the same as the passed phase argument).
             phase_dir = dataset_root
-            dataset_root = str(pathlib.Path(dataset_root).parent)
+            #dataset_root = str(pathlib.Path(dataset_root).parent)
 
         # Load all file paths beforehand.
         # NOTE: This method call handles subdirectories recursively, but also creates extra files.
-        all_files = utils.cached_listdir(phase_dir, allow_exts=['jpg', 'jpeg', 'png'],
-                                         recursive=True)
-        file_count = len(all_files)
-        print('Image file count:', file_count)
-        dset_size = file_count
+        #all_files = utils.cached_listdir(phase_dir, allow_exts=['jpg', 'jpeg', 'png'],
+        #                                 recursive=True)
+        with open(dataset_root) as f:
+            lines = f.readlines()
+            file_count = len(lines)
+            print('Image file count:', file_count)
+            dset_size = file_count
+            self.all_files = lines
+            self.dset_size = dset_size
+            self.file_count = file_count
 
         self.dataset_root = dataset_root
         self.logger = logger
         self.phase = phase
         self.phase_dir = phase_dir
         self.transform = transform
-        self.all_files = all_files
-        self.file_count = file_count
-        self.dset_size = dset_size
+        self.step = 30
 
     def __len__(self):
-        return self.dset_size
+        return int(self.dset_size/30)
 
     def __getitem__(self, index):
         # TODO: Select either deterministic or random mode.
@@ -147,7 +150,7 @@ class MyImageDataset(torch.utils.data.Dataset):
         if 1:
             # Read the image at the specified index.
             file_idx = index
-            image_fp = self.all_files[file_idx]
+            filepath = self.all_files[file_idx]
             rgb_input, _ = _read_image_robust(image_fp, no_fail=True)
 
         if 0:

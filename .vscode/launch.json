@@ -1,0 +1,51 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "train_dbg",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/musclesinaction/train.py",
+            "args": [
+                "--name",
+                "hello",
+                "--bs",
+                "4",
+                "--percent",
+                "0.005"],
+            "env": {
+              "CUDA_VISIBLE_DEVICES": "1",
+            },
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+        },
+        {
+            "name": "data_dbg",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/musclesinaction/testdata.py",
+            "args": [
+                "--name",
+                "hello",
+                "--bs",
+                "4",
+                "--percent",
+                "0.005"],
+            "env": {
+              "CUDA_VISIBLE_DEVICES": "1",
+            },
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+        },
+    ]
+}

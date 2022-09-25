@@ -30,8 +30,8 @@ log_path: 'logs'
 shifted: True
 seed: 100
 lr_decay: 1.0
+modelname: 'test'
 l1_lw: 1.0
 gradient_clip: 0.0
 optim: 'adamw'
-audio_files_dir: '../../../../vondrick4/mia/audioset-processing/audiocaps'
-list_of_files: '../../../../vondrick4/mia/audioset-processing/audioset-processing/filtered_seg_labels.txt'
+data_path: '../../../vondrick/mia/VIBE/dataset.txt'

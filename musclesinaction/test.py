@@ -3,13 +3,13 @@ Evaluation logic.
 '''
 
 # Internal imports.
-import template.configs.args as args
-import template.dataloader.data as data
+import musclesinaction.configs.args as args
+import musclesinaction.dataloader.data as data
 import inference
-import template.losses.loss as loss
-import template.models.model as model
+import musclesinaction.losses.loss as loss
+import musclesinaction.models.model as model
 import vis.logvis as logvis
-import template.utils.utils as utils
+import musclesinaction.utils.utils as utils
 
 
 

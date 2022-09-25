@@ -8,8 +8,8 @@ import pdb
 import torch.nn.functional as F
 
 # Internal imports.
-import template.losses.loss as loss
-import template.utils.utils as utils
+import musclesinaction.losses.loss as loss
+import musclesinaction.utils.utils as utils
 
 
 class MyTrainPipeline(torch.nn.Module):

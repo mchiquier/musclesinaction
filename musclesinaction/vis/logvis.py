@@ -2,7 +2,7 @@
 Logging and visualization logic.
 '''
 
-import template.vis.logvisgen as logvisgen
+import musclesinaction.vis.logvisgen as logvisgen
 import pdb
 import csv
 import wandb
@@ -21,7 +21,7 @@ class MyLogger(logvisgen.Logger):
         else:
             self.step_interval = 200
         self.num_exemplars = 4  # To increase simultaneous examples in wandb during train / val.
-        super().__init__(args.log_path, context)
+        super().__init__(args.log_path, context, args.name)
 
     def handle_train_step(self, epoch, phase, cur_step, total_step, steps_per_epoch,
                           data_retval, model_retval, loss_retval):

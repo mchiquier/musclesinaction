@@ -4,7 +4,7 @@ from importlib.machinery import SourceFileLoader
 with open('README.md') as file:
     long_description = file.read()
 
-name='template'
+name='musclesinaction'
 version = SourceFileLoader(name + '.version', name + '/version.py').load_module()
 
 setup(

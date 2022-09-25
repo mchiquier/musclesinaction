@@ -12,12 +12,12 @@ import time
 import tqdm
 from pathlib import Path
 
-import template.configs.args as args
-import template.dataloader.data as data
-import template.losses.loss as loss
-import template.models.model as model
+import musclesinaction.configs.args as args
+import musclesinaction.dataloader.data as data
+import musclesinaction.losses.loss as loss
+import musclesinaction.models.model as model
 import vis.logvis as logvis
-import template.utils.utils as utils
+import musclesinaction.utils.utils as utils
 import pipeline
 
 def _get_learning_rate(optimizer):
