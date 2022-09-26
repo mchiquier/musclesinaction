@@ -59,7 +59,7 @@ class MyLosses():
         result['l1'] = loss_l1
         return result
 
-    def entire_batch(self, data_retval, model_retval, loss_retval):
+    def entire_batch(self, data_retval, model_retval, loss_retval, total_step):
         '''
         Loss calculations that *cannot* be performed independently for each example within a batch.
         :param data_retval (dict): Data loader elements.
@@ -75,7 +75,7 @@ class MyLosses():
                 loss_retval[k] = torch.sum(v)
 
         # Obtain total loss. 
-        loss_total = loss_retval['l1'] * self.l1_lw
+        loss_total = loss_retval['cross_ent'] #* self.l1_lw
         
         # Convert loss terms (just not the total) to floats for logging.
         for (k, v) in loss_retval.items():
@@ -84,9 +84,9 @@ class MyLosses():
 
         # Report all loss values.
         self.logger.report_scalar(
-            self.phase + '/loss_total', loss_total.item(), remember=True)
-        self.logger.report_scalar(
-            self.phase + '/loss_l1', loss_retval['l1'], remember=True)
+            self.phase + '/loss_total', loss_total.item(), step=total_step)
+        #self.logger.report_scalar(
+        #    self.phase + '/loss_l1', loss_retval['l1'], remember=True)
 
         # Return results, i.e. append to the existing loss_retval dictionary.
         loss_retval['total'] = loss_total

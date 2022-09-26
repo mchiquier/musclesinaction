@@ -10,6 +10,10 @@ import pdb
 import torch
 import os
 import pathlib
+import cv2
+import matplotlib.pyplot as plt
+import joblib
+from matplotlib import animation
 
 def _read_image_robust(img_path, no_fail=False):
     '''
@@ -59,12 +63,12 @@ def create_train_val_data_loaders(args, logger):
     dset_args = dict()
     #dset_args['transform'] = my_transform
 
-    train_dataset = MyMuscleDataset(
+    dataset = MyMuscleDataset(
         args.data_path, logger, 'train', **dset_args)
-    val_aug_dataset = MyMuscleDataset(
-        args.data_path, logger, 'val', **dset_args)
-    val_noaug_dataset = MyMuscleDataset(
-        args.data_path, logger, 'val', **dset_args) 
+    first = int(len(dataset)*0.8)
+    second = len(dataset) - first
+    train_dataset, val_aug_dataset = torch.utils.data.random_split(dataset, [first, second])
+    val_noaug_dataset = val_aug_dataset
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.bs, num_workers=args.num_workers,
@@ -138,40 +142,133 @@ class MyMuscleDataset(torch.utils.data.Dataset):
         self.phase_dir = phase_dir
         self.transform = transform
         self.step = 30
+        self.maxemg = 100
+        self.bins = np.linspace(0, self.maxemg, 20)
+        self.log_dir = 'training_viz_digitized'
+        self.plot = False
+        self.muscles=['rightquad','leftquad','rightham','leftham','rightglutt','leftglutt','leftbicep','rightbicep']
 
     def __len__(self):
-        return int(self.dset_size/30)
+        return int(self.dset_size)
+
+    
+
+    def animate(self, list_of_data, labels, part, trialnum, current_path):
+    
+        #pdb.set_trace()
+        t = np.linspace(0, len(list_of_data[0])/10.0, len(list_of_data[0]))
+        numDataPoints = len(t)
+        colors = ['b','r','c','g']
+        
+            #ax.set_ylabel('y')
+
+        def animate_func(num):
+            print(num, "hi")
+            ax.clear()  # Clears the figure to update the line, point,   
+            for i,limb in enumerate(list_of_data):
+                ax.plot(t[:num],limb[:num], c=colors[i], label=labels[i])
+            #ax.plot(t[:num],dataSetlefttricep[:num], c='red', label='right tricep')
+            ax.legend(loc="upper left")
+
+            #ax.plot(t[0],dataSet[0],     
+            #        c='black', marker='o')
+            # Adding Figure Labels
+            ax.set_title('Trajectories of ' + part + ' \nTime = ' + str(np.round(t[num],    
+                        decimals=2)) + ' sec')
+            ax.set_xlabel('x')
+            ax.set_ylim([0, self.maxemg])
+            
+        fig, ax = plt.subplots()
+        print(numDataPoints)
+        line_ani = animation.FuncAnimation(fig, animate_func, interval=100,   
+                                        frames=numDataPoints)
+        FFwriter = animation.FFMpegWriter(fps=10, extra_args=['-vcodec', 'h264_v4l2m2m'])
+        line_ani.save(current_path + "/" + str(part) + '_emg.mp4')
+
+    def visualize_video(self,index):
+        #index = 5100
+        current_path = self.log_dir + "/" + str(index)
+        os.makedirs(current_path, 0o777, exist_ok=True)
+        file_idx = index
+        filepath = self.all_files[file_idx].split(",")
+        pathtopkl = '../../../vondrick/mia/VIBE/' + filepath[1]
+        pathtoframes = '../../../vondrick/mia/VIBE/' + filepath[0]
+        total = joblib.load(pathtopkl)
+        list_of_emg_values_rightquad = []
+        list_of_emg_values_rightham = []
+        list_of_emg_values_rightglutt = []
+        list_of_emg_values_leftquad = []
+        list_of_emg_values_leftham = []
+        list_of_emg_values_leftglutt = []
+        list_of_emg_values_leftbicep = []
+        list_of_emg_values_lefttricep = []
+        list_of_2d_joints = []
+        for i in range(self.step):
+            filepath = self.all_files[index + i].split(",")
+            frame1=pathtoframes + "/" + filepath[2].zfill(6) + ".png"
+            frame2=pathtoframes +  "/" + filepath[3].zfill(6) + ".png"
+            frame3=pathtoframes +  "/" + filepath[4].zfill(6) + ".png"
+            pickleframe1= int(filepath[5].split("/")[-1])
+            pickleframe2=int(filepath[6].split("/")[-1])
+            pickleframe3=int(filepath[7].split("/")[-1])
+            emgvalues = filepath[8:17]
+            emgvalues[-1] = emgvalues[-1].split("\n")[0]
+            list_of_emg_values_rightquad.append(int(emgvalues[0]))
+            list_of_emg_values_rightham.append(int(emgvalues[2]))
+            list_of_emg_values_rightglutt.append(int(emgvalues[4]))
+
+            list_of_emg_values_leftquad.append(int(emgvalues[1]))
+            list_of_emg_values_leftham.append(int(emgvalues[3]))
+            list_of_emg_values_leftglutt.append(int(emgvalues[5]))
+
+            list_of_emg_values_leftbicep.append(int(emgvalues[6]))
+            list_of_emg_values_lefttricep.append(int(emgvalues[7]))
+            
+            firstjoints2dframe= total[1]['joints2d_img_coord'][pickleframe1]
+            list_of_2d_joints.append(firstjoints2dframe)
+            second2djoints2dframe = total[1]['joints2d_img_coord'][pickleframe2]
+            third2djoints2dframe = total[1]['joints2d_img_coord'][pickleframe3]
+            if self.plot:
+                plt.figure()
+                img=cv2.imread(frame1)
+                img = img[...,::-1]
+                plt.imshow(img)
+                plt.scatter(firstjoints2dframe[:,0],firstjoints2dframe[:,1],s=40)
+                plt.savefig(current_path + "/" + str(index+i) + ".png")
+
+        emg_values = [list_of_emg_values_rightquad,list_of_emg_values_rightham,
+        list_of_emg_values_rightglutt,list_of_emg_values_leftquad,
+        list_of_emg_values_leftham,list_of_emg_values_leftglutt,
+        list_of_emg_values_leftbicep,list_of_emg_values_lefttricep]
+
+        digitized_emg_values=[]
+
+        for muscle in emg_values:
+            digitized_emg_values.append(np.digitize(muscle,self.bins))
+
+        list_of_emg_values_right_leg = [digitized_emg_values[0],digitized_emg_values[2],digitized_emg_values[4]]
+        list_of_emg_values_left_leg = [digitized_emg_values[1],digitized_emg_values[3],digitized_emg_values[5]]
+        list_of_emg_values_left_arm = [digitized_emg_values[6],digitized_emg_values[7]]
+
+        if self.plot:
+            self.animate(list_of_emg_values_right_leg, [self.muscles[0],self.muscles[2],self.muscles[4]], 'rightlegdig', '2',current_path)
+            self.animate(list_of_emg_values_left_leg, [self.muscles[1],self.muscles[3],self.muscles[5]], 'leftlegdig', '2',current_path)
+            self.animate(list_of_emg_values_left_arm, [self.muscles[6],self.muscles[7]], 'leftarmdig', '2',current_path)
+        return (emg_values,list_of_2d_joints)
 
     def __getitem__(self, index):
-        # TODO: Select either deterministic or random mode.
-        # Sometimes, not every element in the dataset is actually suitable, in which case retries
-        # may be needed, and as such the latter option is preferred.
 
-        if 1:
-            # Read the image at the specified index.
-            file_idx = index
-            filepath = self.all_files[file_idx]
-            rgb_input, _ = _read_image_robust(image_fp, no_fail=True)
-
-        if 0:
-            # Read a random image.
-            success = True
-            file_idx = -1
-            while not success:
-                file_idx = np.random.choice(self.file_count)
-                image_fp = self.all_files[file_idx]
-                rgb_input, success = _read_image_robust(image_fp)
-
-        # Apply transforms.
-        if self.transform is not None:
-            rgb_input = self.src_transform(rgb_input)
-
-        # Obtain ground truth.
-        rgb_target = 1.0 - rgb_input
+        (list_of_emg_values, twod_joints) = self.visualize_video(index)
+        twod_joints=np.array(twod_joints)
+        twod_joints = twod_joints.reshape(twod_joints.shape[0],-1)
+        emg_values_right_quad = np.array(list_of_emg_values)[0]
+        bined_right_quad = np.digitize(emg_values_right_quad,self.bins)
+        emg_values_left_quad = np.array(list_of_emg_values)[1]
+        bined_left_quad = np.digitize(emg_values_left_quad,self.bins)
 
         # Return results.
-        result = {'rgb_input': rgb_input,  # (H, W, 3).
-                  'rgb_target': rgb_target,  # (H, W, 3).
-                  'file_idx': file_idx,
-                  'path': image_fp}
+        result = {'bined_left_quad': bined_left_quad,  # (H, W, 3).
+                  'bined_right_quad': bined_right_quad,  # (H, W, 3).
+                  '2dskeleton': twod_joints}
         return result
+

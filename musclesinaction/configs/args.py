@@ -10,7 +10,7 @@ import os
 
 def train_args():
     #pdb.set_trace()
-    thedict = benedict.from_yaml('configs/train.yaml')
+    thedict = benedict.from_yaml('musclesinaction/configs/train.yaml')
     #pdb.set_trace()
     parser = argparse.ArgumentParser()
 

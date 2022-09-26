@@ -26,8 +26,7 @@ def main(args, logger):
         data.create_train_val_data_loaders(args, logger)
 
     for cur_step, data_retval in enumerate(tqdm.tqdm(train_loader)):
-        pdb.set_trace()
-
+        print("hi")
 
 if __name__ == '__main__':
 

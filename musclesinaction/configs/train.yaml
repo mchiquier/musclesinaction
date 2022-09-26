@@ -1,5 +1,6 @@
-num_tokens: 256 
-dim_model: 1024
+num_tokens: 98
+num_classes: 20
+dim_model: 512
 num_heads: 16
 num_encoder_layers: 9
 num_decoder_layers: 9
@@ -14,7 +15,7 @@ gpt_block_size: 265  # 53*5 + 1
 gpt_n_layer: 19
 gpt_n_head: 16
 gpt_n_embd: 1024
-bs: 32
+bs: 64
 embedding: True
 cheat: False
 transformer: 'transfboth'
@@ -25,7 +26,7 @@ device: 'cuda'
 checkpoint_path: 'checkpoints'
 learn_rate: 0.00001
 num_epochs: 10000
-name: 'transformer_both_concat_ar_medlr'
+name: 'muscle_transformer'
 log_path: 'logs'
 shifted: True
 seed: 100
@@ -34,4 +35,4 @@ modelname: 'test'
 l1_lw: 1.0
 gradient_clip: 0.0
 optim: 'adamw'
-data_path: '../../../vondrick/mia/VIBE/dataset.txt'
+data_path: '../../../vondrick/mia/VIBE/dataset2.txt'

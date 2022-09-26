@@ -12,6 +12,8 @@ import time
 import tqdm
 from pathlib import Path
 
+import musclesinaction.models.model as model
+
 import musclesinaction.configs.args as args
 import musclesinaction.dataloader.data as data
 import musclesinaction.losses.loss as loss
@@ -26,7 +28,7 @@ def _get_learning_rate(optimizer):
 
 
 def _train_one_epoch(args, train_pipeline, phase, epoch, optimizer,
-                     lr_scheduler, data_loader, device, logger):
+                     lr_scheduler, train_data_loader, val_data_loader,device, logger):
     assert phase in ['train', 'val', 'val_aug', 'val_noaug']
 
     log_str = f'Epoch (1-based): {epoch + 1} / {args.num_epochs}'
@@ -41,12 +43,14 @@ def _train_one_epoch(args, train_pipeline, phase, epoch, optimizer,
 
     train_pipeline[1].set_phase(phase)
 
-    steps_per_epoch = len(data_loader)
+    steps_per_epoch = len(train_data_loader) + len(val_data_loader)
     total_step_base = steps_per_epoch * epoch  # This has already happened so far.
+    if phase != 'train':
+        total_step_base = total_step_base + len(train_data_loader)
     start_time = time.time()
     num_exceptions = 0
 
-    for cur_step, data_retval in enumerate(tqdm.tqdm(data_loader)):
+    for cur_step, data_retval in enumerate(tqdm.tqdm(train_data_loader)):
 
         if cur_step == 0:
             logger.info(f'Enter first data loader iteration took {time.time() - start_time:.3f}s')
@@ -107,7 +111,7 @@ def _train_all_epochs(args, train_pipeline, optimizer, lr_scheduler, start_epoch
         # Training.
         _train_one_epoch(
             args, train_pipeline, 'train', epoch, optimizer,
-            lr_scheduler, train_loader, device, logger)
+            lr_scheduler, train_loader, val_aug_loader, device, logger)
 
         # Save model weights.
         checkpoint_fn(epoch)
@@ -115,7 +119,7 @@ def _train_all_epochs(args, train_pipeline, optimizer, lr_scheduler, start_epoch
         # Validation with data augmentation.
         _train_one_epoch(
             args, train_pipeline, 'val_aug', epoch, optimizer,
-            lr_scheduler, val_aug_loader, device, logger)
+            lr_scheduler, train_loader, val_aug_loader, device, logger)
 
         # Validation without data augmentation.
         if args.do_val_noaug:
@@ -159,11 +163,21 @@ def main(args, logger):
     start_time = time.time()
 
     # Instantiate networks.
-    model_args = dict()
-    my_model = model.MyModel(logger, **model_args)
+    model_args = {'num_tokens': int(args.num_tokens),
+        'dim_model': int(args.dim_model),
+        'num_classes': int(args.num_classes),
+        'num_heads': int(args.num_heads),
+        'num_encoder_layers':int(args.num_encoder_layers),
+        'num_decoder_layers':int(args.num_decoder_layers),
+        'dropout_p':float(args.dropout_p),
+        'device': args.device,
+        'embedding': args.embedding}
+
+
+    transformer_model = model.TransformerEnc(**model_args)
 
     # Bundle networks into a list.
-    networks = [my_model]
+    networks = [transformer_model]
     for i in range(len(networks)):
         networks[i] = networks[i].to(device)
     networks_nodp = [net for net in networks]
@@ -217,7 +231,7 @@ def main(args, logger):
 
     if 1:
         # if 'dbg' not in args.name:
-        logger.init_wandb(PROJECT_NAME, args, networks, name=args.name,
+        logger.init_wandb('musclesinaction', args, networks, name=args.name,
                           group='train_debug' if 'dbg' in args.name else 'train')
 
     # Print train arguments.

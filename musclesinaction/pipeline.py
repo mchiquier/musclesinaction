@@ -26,6 +26,7 @@ class MyTrainPipeline(torch.nn.Module):
         self.device = device
         self.phase = None  # Assigned only by set_phase().
         self.losses = None  # Instantiated only by set_phase().
+        self.crossent = nn.CrossEntropyLoss()
 
     def set_phase(self, phase):
         self.phase = phase
@@ -58,15 +59,19 @@ class MyTrainPipeline(torch.nn.Module):
             loss_retval (dict): Preliminary loss information (per-example, but not batch-wide).
         '''
 
-        rgb_input = data_retval['rgb_input']
-        rgb_input = rgb_input.to(self.device)
+        twodskeleton = data_retval['2dskeleton']
+        bined_left_quad = data_retval['bined_left_quad']
+        bined_left_quad = bined_left_quad.to(self.device)-1
+        twodskeleton = twodskeleton.to(self.device)
 
-        rgb_output = self.my_model(rgb_input)
+        emg_output = self.my_model(twodskeleton, bined_left_quad)
+        loss = self.crossent(emg_output, bined_left_quad.type(torch.cuda.LongTensor))
 
         model_retval = dict()
-        model_retval['rgb_output'] = rgb_output
-
-        loss_retval = self.losses.per_example(data_retval, model_retval)
+        model_retval['emg_output'] = emg_output
+        loss_retval = dict()
+        loss_retval['cross_ent'] = loss
+        #loss_retval = self.losses.per_example(data_retval, model_retval)
 
         return (model_retval, loss_retval)
 
@@ -80,6 +85,6 @@ class MyTrainPipeline(torch.nn.Module):
         :param total_step (int): Cumulative data loader index, including all previous epochs.
         :return loss_retval (dict): All loss information.
         '''
-        loss_retval = self.losses.entire_batch(data_retval, model_retval, loss_retval)
+        loss_retval = self.losses.entire_batch(data_retval, model_retval, loss_retval,total_step)
 
         return loss_retval
