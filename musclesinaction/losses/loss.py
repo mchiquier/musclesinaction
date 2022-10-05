@@ -3,7 +3,7 @@ Objective functions.
 '''
 
 import torch
-
+import pdb
 class MyLosses():
     '''
     Wrapper around the loss functionality such that DataParallel can be leveraged.
@@ -74,6 +74,8 @@ class MyLosses():
             if torch.is_tensor(v):
                 loss_retval[k] = torch.sum(v)
 
+
+
         # Obtain total loss. 
         loss_total = loss_retval['cross_ent'] #* self.l1_lw
         
@@ -83,8 +85,9 @@ class MyLosses():
                 loss_retval[k] = v.item()
 
         # Report all loss values.
-        self.logger.report_scalar(
-            self.phase + '/loss_total', loss_total.item(), step=total_step)
+        if self.phase != 'eval':
+            self.logger.report_scalar(
+                self.phase + '/loss_total', loss_total.item(), step=total_step)
         #self.logger.report_scalar(
         #    self.phase + '/loss_l1', loss_retval['l1'], remember=True)
 

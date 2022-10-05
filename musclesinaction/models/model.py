@@ -60,6 +60,7 @@ class TransformerEnc(nn.Module):
         dim_model,
         num_classes,
         num_heads,
+        classif,
         num_encoder_layers,
         num_decoder_layers,
         dropout_p,
@@ -72,6 +73,7 @@ class TransformerEnc(nn.Module):
         self.model_type = "Transformer"
         self.dim_model = dim_model
         self.device = device
+        self.classif = classif
 
         # LAYERS
         self.positional_encoder = PositionalEncoding(
@@ -79,13 +81,16 @@ class TransformerEnc(nn.Module):
         )
 
         self.embedding = nn.Linear(num_tokens, dim_model) #ALTERNATIVE
+        self.relu = nn.LeakyReLU()
         
         #self.clipproj = nn.Linear(512,256)
         self.encoder_layer = nn.TransformerEncoderLayer(d_model=dim_model, nhead=num_heads)
         self.transformer = nn.TransformerEncoder(self.encoder_layer, num_layers=num_encoder_layers)
         self.num_classes = num_classes
-
-        self.out = nn.Linear(dim_model, self.num_classes)
+        if not self.classif:
+            self.out = nn.Linear(dim_model, 1)
+        else:
+            self.out = nn.Linear(dim_model, self.num_classes)
         
     def forward(self, src, tgt, src_pad_mask=None, tgt_pad_mask=None):
         # Src size must be (batch_size, src sequence length)
@@ -105,10 +110,11 @@ class TransformerEnc(nn.Module):
         out = self.out(transformer_out)
         out = out.permute(1,2,0)
         #out = out.permute(1,2,0)
-        
-        return out
+        if not self.classif:
+            out = self.relu(out)
 
-    
+        
+        return out  
       
     def get_tgt_mask(self, size) -> torch.tensor:
         # Generates a squeare matrix where the each row allows one word more to be seen

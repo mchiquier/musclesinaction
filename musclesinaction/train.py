@@ -11,8 +11,9 @@ import os
 import time
 import tqdm
 from pathlib import Path
-
+import pdb
 import musclesinaction.models.model as model
+import musclesinaction.models.basicconv as convmodel
 
 import musclesinaction.configs.args as args
 import musclesinaction.dataloader.data as data
@@ -29,7 +30,7 @@ def _get_learning_rate(optimizer):
 
 def _train_one_epoch(args, train_pipeline, phase, epoch, optimizer,
                      lr_scheduler, train_data_loader, val_data_loader,device, logger):
-    assert phase in ['train', 'val', 'val_aug', 'val_noaug']
+    #assert phase in ['train', 'val', 'val_aug', 'val_noaug']
 
     log_str = f'Epoch (1-based): {epoch + 1} / {args.num_epochs}'
     logger.info()
@@ -49,8 +50,11 @@ def _train_one_epoch(args, train_pipeline, phase, epoch, optimizer,
         total_step_base = total_step_base + len(train_data_loader)
     start_time = time.time()
     num_exceptions = 0
-
-    for cur_step, data_retval in enumerate(tqdm.tqdm(train_data_loader)):
+    if phase == 'train':
+        data_loader = train_data_loader
+    else:
+        data_loader = val_data_loader
+    for cur_step, data_retval in enumerate(tqdm.tqdm(data_loader)):
 
         if cur_step == 0:
             logger.info(f'Enter first data loader iteration took {time.time() - start_time:.3f}s')
@@ -89,8 +93,13 @@ def _train_one_epoch(args, train_pipeline, phase, epoch, optimizer,
             optimizer.step()
 
         # Print and visualize stuff.
-        logger.handle_train_step(epoch, phase, cur_step, total_step, steps_per_epoch,
+        """if phase == 'eval' and epoch%5==0:
+            logger.handle_train_step(epoch, phase, cur_step, total_step, steps_per_epoch,
                            data_retval, model_retval, loss_retval)
+        if phase=='val' and epoch%5==0:
+            #print("hi")
+            logger.handle_val_step(epoch, phase, cur_step, total_step, steps_per_epoch,
+                        data_retval, model_retval, loss_retval)"""
 
         # DEBUG:
         if cur_step >= 256 and 'dbg' in args.name:
@@ -101,7 +110,7 @@ def _train_one_epoch(args, train_pipeline, phase, epoch, optimizer,
         lr_scheduler.step()
 
 
-def _train_all_epochs(args, train_pipeline, optimizer, lr_scheduler, start_epoch, train_loader,
+def _train_all_epochs(args, train_pipeline, optimizer, lr_scheduler, start_epoch, train_loader, train_loader_noshuffle,
                       val_aug_loader, val_noaug_loader, device, logger, checkpoint_fn):
 
     logger.info('Start training loop...')
@@ -113,19 +122,18 @@ def _train_all_epochs(args, train_pipeline, optimizer, lr_scheduler, start_epoch
             args, train_pipeline, 'train', epoch, optimizer,
             lr_scheduler, train_loader, val_aug_loader, device, logger)
 
+        """_train_one_epoch(
+            args, train_pipeline, 'eval', epoch, optimizer,
+            lr_scheduler, train_loader_noshuffle, train_loader_noshuffle, device, logger)"""
+
         # Save model weights.
-        checkpoint_fn(epoch)
+        if epoch%10==0 and args.name != 'dbg':
+            checkpoint_fn(epoch)
 
-        # Validation with data augmentation.
+        # Validation with data augmentation. 
         _train_one_epoch(
-            args, train_pipeline, 'val_aug', epoch, optimizer,
+            args, train_pipeline, 'val', epoch, optimizer,
             lr_scheduler, train_loader, val_aug_loader, device, logger)
-
-        # Validation without data augmentation.
-        if args.do_val_noaug:
-            _train_one_epoch(
-                args, train_pipeline, 'val_noaug', epoch, optimizer,
-                lr_scheduler, val_noaug_loader, device, logger)
 
         logger.epoch_finished(epoch)
 
@@ -148,6 +156,7 @@ def main(args, logger):
     if args.device == 'cuda':
         torch.cuda.manual_seed_all(args.seed)
     device = torch.device(args.device)
+    args.checkopint_path = args.checkpoint_path + "/" + args.name
 
     logger.info('Checkpoint path: ' + args.checkpoint_path)
     os.makedirs(args.checkpoint_path, exist_ok=True)
@@ -155,7 +164,7 @@ def main(args, logger):
     # Instantiate datasets.
     logger.info('Initializing data loaders...')
     start_time = time.time()
-    (train_loader, val_aug_loader, val_noaug_loader, dset_args) = \
+    (train_loader, train_loader_noshuffle, val_aug_loader, val_noaug_loader, dset_args) = \
         data.create_train_val_data_loaders(args, logger)
     logger.info(f'Took {time.time() - start_time:.3f}s')
 
@@ -163,21 +172,27 @@ def main(args, logger):
     start_time = time.time()
 
     # Instantiate networks.
-    model_args = {'num_tokens': int(args.num_tokens),
+   
+
+    if args.transformer:
+        model_args = {'num_tokens': int(args.num_tokens),
         'dim_model': int(args.dim_model),
         'num_classes': int(args.num_classes),
         'num_heads': int(args.num_heads),
+        'classif': args.classif,
         'num_encoder_layers':int(args.num_encoder_layers),
         'num_decoder_layers':int(args.num_decoder_layers),
         'dropout_p':float(args.dropout_p),
         'device': args.device,
         'embedding': args.embedding}
-
-
-    transformer_model = model.TransformerEnc(**model_args)
+        model = model.TransformerEnc(**model_args)
+    else:
+        model_args = {
+        'device': args.device}
+        model = convmodel.BasicConv(**model_args)
 
     # Bundle networks into a list.
-    networks = [transformer_model]
+    networks = [model]
     for i in range(len(networks)):
         networks[i] = networks[i].to(device)
     networks_nodp = [net for net in networks]
@@ -241,7 +256,7 @@ def main(args, logger):
     # Start training loop.
     _train_all_epochs(
         args, (train_pipeline, train_pipeline_nodp), optimizer, lr_scheduler, start_epoch,
-        train_loader, val_aug_loader, val_noaug_loader, device, logger, save_model_checkpoint)
+        train_loader, train_loader_noshuffle, val_aug_loader, val_noaug_loader, device, logger, save_model_checkpoint)
 
 
 if __name__ == '__main__':
