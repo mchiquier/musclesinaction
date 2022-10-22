@@ -12,7 +12,8 @@ import time
 import tqdm
 from pathlib import Path
 import pdb
-import musclesinaction.models.model as model
+import musclesinaction.models.model as transmodel
+import musclesinaction.models.modelbert as transmodelbert
 import musclesinaction.models.basicconv as convmodel
 
 import musclesinaction.configs.args as args
@@ -54,6 +55,7 @@ def _train_one_epoch(args, train_pipeline, phase, epoch, optimizer,
         data_loader = train_data_loader
     else:
         data_loader = val_data_loader
+        
     for cur_step, data_retval in enumerate(tqdm.tqdm(data_loader)):
 
         if cur_step == 0:
@@ -65,11 +67,13 @@ def _train_one_epoch(args, train_pipeline, phase, epoch, optimizer,
             # First, address every example independently.
             # This part has zero interaction between any pair of GPUs.
             (model_retval, loss_retval) = train_pipeline[0](data_retval, cur_step, total_step)
-
             # Second, process accumulated information, for example contrastive loss functionality.
             # This part typically happens on the first GPU, so it should be kept minimal in memory.
+            #ignoremovie = args.data_path_train
+            #ignoremovie = ignoremovie.split("/")[-1].split(".txt")[0].split("_")[2]
+            ignoremovie = None
             loss_retval = train_pipeline[1].process_entire_batch(
-                data_retval, model_retval, loss_retval, cur_step, total_step)
+                data_retval, model_retval, loss_retval, ignoremovie, cur_step, total_step)
             total_loss = loss_retval['total']
 
         except Exception as e:
@@ -93,13 +97,15 @@ def _train_one_epoch(args, train_pipeline, phase, epoch, optimizer,
             optimizer.step()
 
         # Print and visualize stuff.
-        """if phase == 'eval' and epoch%5==0:
+        """"if phase == 'eval':
             logger.handle_train_step(epoch, phase, cur_step, total_step, steps_per_epoch,
                            data_retval, model_retval, loss_retval)
-        if phase=='val' and epoch%5==0:
-            #print("hi")
+        if phase=='val':
+
             logger.handle_val_step(epoch, phase, cur_step, total_step, steps_per_epoch,
                         data_retval, model_retval, loss_retval)"""
+
+            
 
         # DEBUG:
         if cur_step >= 256 and 'dbg' in args.name:
@@ -115,27 +121,41 @@ def _train_all_epochs(args, train_pipeline, optimizer, lr_scheduler, start_epoch
 
     logger.info('Start training loop...')
     start_time = time.time()
+    list_of_val_vals = []
     for epoch in range(start_epoch, args.num_epochs):
 
         # Training.
         _train_one_epoch(
             args, train_pipeline, 'train', epoch, optimizer,
             lr_scheduler, train_loader, val_aug_loader, device, logger)
-
+        
         """_train_one_epoch(
             args, train_pipeline, 'eval', epoch, optimizer,
             lr_scheduler, train_loader_noshuffle, train_loader_noshuffle, device, logger)"""
 
         # Save model weights.
-        if epoch%10==0 and args.name != 'dbg':
+        if epoch%1==0 and args.name != 'dbg':
             checkpoint_fn(epoch)
 
         # Validation with data augmentation. 
+
         _train_one_epoch(
             args, train_pipeline, 'val', epoch, optimizer,
             lr_scheduler, train_loader, val_aug_loader, device, logger)
 
-        logger.epoch_finished(epoch)
+        #pdb.set_trace()
+        returnval = logger.epoch_finished(epoch)
+
+        """Early stopping
+        returnval = logger.epoch_finished(epoch)
+        if len(list_of_val_vals) < 10:
+            list_of_val_vals.append(returnval)
+        else:
+            if list_of_val_vals[0] > list_of_val_vals[-1]:
+                list_of_val_vals.pop(0) 
+                list_of_val_vals.append(returnval)
+            else:
+                break"""
 
         # TODO: Optionally, keep track of best weights.
 
@@ -156,7 +176,7 @@ def main(args, logger):
     if args.device == 'cuda':
         torch.cuda.manual_seed_all(args.seed)
     device = torch.device(args.device)
-    args.checkopint_path = args.checkpoint_path + "/" + args.name
+    args.checkpoint_path = args.checkpoint_path + "/" + args.name
 
     logger.info('Checkpoint path: ' + args.checkpoint_path)
     os.makedirs(args.checkpoint_path, exist_ok=True)
@@ -174,7 +194,7 @@ def main(args, logger):
     # Instantiate networks.
    
 
-    if args.transformer:
+    if args.modelname == 'transf':
         model_args = {'num_tokens': int(args.num_tokens),
         'dim_model': int(args.dim_model),
         'num_classes': int(args.num_classes),
@@ -185,7 +205,11 @@ def main(args, logger):
         'dropout_p':float(args.dropout_p),
         'device': args.device,
         'embedding': args.embedding}
-        model = model.TransformerEnc(**model_args)
+        model = transmodelbert.TransformerEnc(**model_args)
+    elif args.modelname == 'old':
+        model_args = {
+        'device': args.device}
+        model = convmodel.OldBasicConv(**model_args)
     else:
         model_args = {
         'device': args.device}
@@ -205,7 +229,7 @@ def main(args, logger):
         train_pipeline = torch.nn.DataParallel(train_pipeline)
 
     # Instantiate optimizer & learning rate scheduler.
-    optimizer = torch.optim.Adam(train_pipeline.parameters(), lr=args.learn_rate)
+    optimizer = torch.optim.AdamW(train_pipeline.parameters(), lr=args.learn_rate)
     milestones = [(args.num_epochs * 2) // 5,
                   (args.num_epochs * 3) // 5,
                   (args.num_epochs * 4) // 5]
@@ -246,7 +270,7 @@ def main(args, logger):
 
     if 1:
         # if 'dbg' not in args.name:
-        logger.init_wandb('musclesinaction', args, networks, name=args.name,
+        logger.init_wandb('mia', args, networks, name=args.name,
                           group='train_debug' if 'dbg' in args.name else 'train')
 
     # Print train arguments.

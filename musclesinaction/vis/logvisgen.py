@@ -115,19 +115,30 @@ class Logger:
                         xname="indices")},step=step)
 
 
-    def report_scalar(self, key, value, step=None, remember=False, commit_histogram=False):
+    def report_scalar(self, key, value, step=None, remember=True, commit_histogram=False):
         '''
         Logs a single named value associated with a step.
         If commit_histogram, actual logging is deferred until commit_scalars() is called.
         '''
-        if not remember:
+        if not remember and not commit_histogram:
             if self.initialized:
                 wandb.log({key: value}, step=step)
             else:
                 self.debug(str(key) + ': ' + str(value))
         else:
-            self.scalar_memory[key].append(value)
+            if isinstance(value,list):
+                self.scalar_memory[key].extend(value)
+            else:
+                self.scalar_memory[key].append(value)
             self.scalar_memory_hist[key] = commit_histogram
+
+    def mean_scalar(self, key, value, step=None, remember=False, commit_histogram=False):
+        '''
+        Logs a single named value associated with a step.
+        If commit_histogram, actual logging is deferred until commit_scalars() is called.
+        '''
+        for key in self.scalar_memory.keys():
+            wandb.log({key: torch.mean(self.scalar_memory[key])}, step=step)
 
     def commit_scalars(self, keys=None, step=None):
         '''
@@ -136,6 +147,7 @@ class Logger:
         '''
         if keys is None:
             keys = list(self.scalar_memory.keys())
+        returnval = 0
         for key in keys:
             if len(self.scalar_memory[key]) == 0:
                 continue
@@ -145,11 +157,15 @@ class Logger:
                 if self.scalar_memory_hist[key]:
                     wandb.log({key: wandb.Histogram(np.array(self.scalar_memory[key]))}, step=step)
                 else:
+                    print("here")
                     wandb.log({key: value}, step=step)
 
             else:
                 self.debug(str(key) + ': ' + str(value))
+            if key == 'val/loss_total':
+                returnval=value
             self.scalar_memory[key].clear()
+        return returnval
 
     def report_histogram(self, key, value, step=None):
         '''

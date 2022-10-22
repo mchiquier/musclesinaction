@@ -59,7 +59,7 @@ class MyLosses():
         result['l1'] = loss_l1
         return result
 
-    def entire_batch(self, data_retval, model_retval, loss_retval, total_step):
+    def entire_batch(self, data_retval, model_retval, loss_retval,ignoremovie, total_step):
         '''
         Loss calculations that *cannot* be performed independently for each example within a batch.
         :param data_retval (dict): Data loader elements.
@@ -70,14 +70,27 @@ class MyLosses():
 
         # Sum all terms across batch size.
         # Prefer sum over mean to be consistent with dataset size.
+
+        list_of_movienames = []
+    
+        v = loss_retval['cross_ent']
+        """if torch.is_tensor(v):
+            for i in range(v.shape[0]):
+                moviename = data_retval['frame_paths'][0][i].split("/")[-2].split("_")[1]
+                list_of_movienames.append(moviename)
+                if moviename in loss_retval.keys():
+                    loss_retval[moviename].append(v[i].detach().cpu().numpy().item())
+                else:
+                    loss_retval[moviename] = [v[i].detach().cpu().numpy().item()]"""
+
         for (k, v) in loss_retval.items():
             if torch.is_tensor(v):
-                loss_retval[k] = torch.sum(v)
-
-
+                if k == 'cross_ent':
+                    loss_retval[k] = torch.mean(v)
 
         # Obtain total loss. 
         loss_total = loss_retval['cross_ent'] #* self.l1_lw
+        #video = data_retval['frame_paths'][0][0].split("/")[-2]
         
         # Convert loss terms (just not the total) to floats for logging.
         for (k, v) in loss_retval.items():
@@ -86,8 +99,18 @@ class MyLosses():
 
         # Report all loss values.
         if self.phase != 'eval':
+            """for moviename in sorted(set(list_of_movienames)):
+                if ignoremovie in moviename:
+                    self.logger.report_scalar(
+                    self.phase + '/loss_total_' + moviename, loss_retval[moviename], step=total_step)"""
             self.logger.report_scalar(
                 self.phase + '/loss_total', loss_total.item(), step=total_step)
+            for i in range(model_retval['emg_gt'].shape[1]):
+                self.logger.report_scalar(
+                    self.phase + '/emggt' + str(i), torch.mean(model_retval['emg_gt'][:,i,:]).item(), step=total_step,remember=False,commit_histogram=True)
+                self.logger.report_scalar(
+                    self.phase + '/emgpred' + str(i), torch.mean(model_retval['emg_output'][:,i,:]).item(), step=total_step,remember=False,commit_histogram=True)
+
         #self.logger.report_scalar(
         #    self.phase + '/loss_l1', loss_retval['l1'], remember=True)
 
