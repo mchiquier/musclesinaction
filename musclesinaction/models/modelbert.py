@@ -59,7 +59,7 @@ class MyLayer(torch.nn.Module):
         self.encoder_layer_spatial = nn.TransformerEncoderLayer(d_model=dim_model, nhead=num_heads, batch_first=True)
         self.encoder_layer_temporal2 = nn.TransformerEncoderLayer(d_model=dim_model, nhead=num_heads, batch_first=True)
         self.encoder_layer_spatial2 = nn.TransformerEncoderLayer(d_model=dim_model, nhead=num_heads, batch_first=True)
-        self.weightlinear1 = nn.Linear(256,2)
+        self.weightlinear1 = nn.Linear(dim_model*2,2)
         self.softmax1 = nn.Softmax(dim=3)
     def forward(self, x, src_mask,src_key_padding_mask):
         """
@@ -156,9 +156,8 @@ class TransformerEnc(nn.Module):
         self.num_classes8 = num_classes
      
         self.out_joints = nn.Linear(25, 8)
-        self.out_channel = nn.Linear(128, 1)
-        self.weightlinear1 = nn.Linear(512,2)
-        self.weightlinear2 = nn.Linear(512,2)
+        self.out_channel = nn.Linear(dim_model, 1)
+
         self.softmax1 = nn.Softmax(dim=3)
         self.softmax2 = nn.Softmax(dim=3)
         self.tanh1 = nn.Tanh()
