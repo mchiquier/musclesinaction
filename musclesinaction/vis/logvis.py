@@ -114,24 +114,104 @@ class MyLogger(logvisgen.Logger):
             self.info(f'[Step {cur_step} / {steps_per_epoch}]  '
                     f'total_loss: {total_loss:.3f}  ')
 
-    def visualize_video(self, frames, twodskeleton, cur_step,j,phase,movie):
+    def plot_skel(self, keypoints, img, currentpath, i, markersize=5, linewidth=2, alpha=0.7):
+        plt.figure()
+        #pdb.set_trace()
+        keypoints = keypoints[:25]
+        plt.imshow(img)
+        limb_seq = [([17, 15], [238, 0, 255]),
+                    ([15, 0], [255, 0, 166]),
+                    ([0, 16], [144, 0, 255]),
+                    ([16, 18], [65, 0, 255]),
+                    ([0, 1], [255, 0, 59]),
+                    ([1, 2], [255, 77, 0]),
+                    ([2, 3], [247, 155, 0]),
+                    ([3, 4], [255, 255, 0]),
+                    ([1, 5], [158, 245, 0]),
+                    ([5, 6], [93, 255, 0]),
+                    ([6, 7], [0, 255, 0]),
+                    ([1, 8], [255, 21, 0]),
+                    ([8, 9], [6, 255, 0]),
+                    ([9, 10], [0, 255, 117]),
+                    # ([10, 11]], [0, 252, 255]),  # See comment above
+                    ([10, 24], [0, 252, 255]),
+                    ([8, 12], [0, 140, 255]),
+                    ([12, 13], [0, 68, 255]),
+                    ([13, 14], [0, 14, 255]),
+                    # ([11, 22], [0, 252, 255]),
+                    # ([11, 24], [0, 252, 255]),
+                    ([24, 22], [0, 252, 255]),
+                    ([24, 24], [0, 252, 255]),
+                    ([22, 23], [0, 252, 255]),
+                    ([14, 19], [0, 14, 255]),
+                    ([14, 21], [0, 14, 255]),
+                    ([19, 20], [0, 14, 255])]
 
+        colors_vertices = {0: limb_seq[4][1],
+                        1: limb_seq[11][1],
+                        2: limb_seq[5][1],
+                        3: limb_seq[6][1],
+                        4: limb_seq[7][1],
+                        5: limb_seq[8][1],
+                        6: limb_seq[9][1],
+                        7: limb_seq[10][1],
+                        8: limb_seq[11][1],
+                        9: limb_seq[12][1],
+                        10: limb_seq[13][1],
+                        11: limb_seq[14][1],
+                        12: limb_seq[15][1],
+                        13: limb_seq[16][1],
+                        14: limb_seq[17][1],
+                        15: limb_seq[1][1],
+                        16: limb_seq[2][1],
+                        17: limb_seq[0][1],
+                        18: limb_seq[3][1],
+                        19: limb_seq[21][1],
+                        20: limb_seq[23][1],
+                        21: limb_seq[22][1],
+                        22: limb_seq[18][1],
+                        23: limb_seq[20][1],
+                        24: limb_seq[19][1]}
+
+        alpha = alpha
+        for vertices, color in limb_seq:
+            if keypoints[vertices[0]].mean() != 0 and keypoints[vertices[1]].mean() != 0:
+                plt.plot([keypoints[vertices[0]][0], keypoints[vertices[1]][0]],
+                        [keypoints[vertices[0]][1], keypoints[vertices[1]][1]], linewidth=linewidth,
+                        color=[j / 255 for j in color], alpha=alpha)
+        # plot kp
+        #set_trace()
+        for k in range(len(keypoints)):
+            if keypoints[k].mean() != 0:
+                plt.plot(keypoints[k][0], keypoints[k][1], 'o', markersize=markersize,
+                        color=[j / 255 for j in colors_vertices[k]], alpha=alpha)
+        #pdb.set_trace()
+        plt.axis('off')
+        plt.savefig( currentpath + "/" + 'skeletonimgs/' + str(i).zfill(6) + ".png",bbox_inches='tight', pad_inches = 0)
+
+    def visualize_video(self, frames, twodskeleton, cur_step,j,phase,movie):
+        #pdb.set_trace()
         current_path = "../../www-data/mia/muscleresults/" + self.args.name + '_' + phase + '_viz_digitized/' + movie + "/" + str(cur_step) + "/" + str(j)
         if not os.path.isdir(current_path):
             os.makedirs(current_path, 0o777)
-            for i in range(len(frames)):
-                img=cv2.imread(frames[i])
-                img = img[...,::-1]
-                cur_skeleton = twodskeleton[i].cpu().numpy()
-                plt.figure()
-                plt.imshow(img)
-                plt.scatter(cur_skeleton[:,0],cur_skeleton[:,1],s=40)
-                plt.savefig(current_path + "/" + str(i).zfill(6) + ".png")
+        if not os.path.isdir(current_path + '/skeletonimgs'):
+            os.makedirs(current_path + '/skeletonimgs', 0o777)
+        for i in range(len(frames)):
+            #pdb.set_trace()
+            img=cv2.imread(frames[i])
+            img = img[...,::-1]
+            cur_skeleton = twodskeleton[i].cpu().numpy()
+            self.plot_skel(cur_skeleton,img, current_path, i)
+                #plt.figure()
+                #plt.imshow(img)
+                #plt.scatter(cur_skeleton[:,0],cur_skeleton[:,1],s=40)
+                #plt.savefig(current_path + "/" + str(i).zfill(6) + ".png")
 
-            command = ['ffmpeg', '-framerate', '10', '-i',f'{current_path}/%06d.png',  '-c:v', 'libx264','-pix_fmt', 'yuv420p', f'{current_path}/out.mp4']
+        #command = ['ffmpeg', '-framerate', '10', '-i',f'{current_path}' + "/skeletonimgs" + '/%06d.png',  '-c:v', 'libx264','-vf' ,'pad=ceil(iw/2)*2:ceil(ih/2)*2',
+        #'-pix_fmt', 'yuv420p', f'{current_path}/out.mp4']
 
-            print(f'Running \"{" ".join(command)}\"')
-            subprocess.call(command)
+        #print(f'Running \"{" ".join(command)}\"')
+        #subprocess.call(command)
 
         return current_path
 
@@ -232,17 +312,45 @@ class MyLogger(logvisgen.Logger):
 
     def visualize_mesh_activation(self,list_of_verts,list_of_origcam,frames, emg_values,emg_values_pred,current_path):
         #maxvals = torch.ones(emg_values.shape)*200.0
+
+        # DEBUG #
+        #pdb.set_trace()
         maxvals = torch.unsqueeze(torch.tensor([139,174,155,127,113,246,84,107]),dim=1).repeat(1,30)
-        
+        #maxvals = torch.unsqueeze(torch.tensor([70,70]),dim=1).repeat(1,30)
+        #maxvalspred = torch.unsqueeze(torch.tensor([70,70,70,70,70,70,70,70]),dim=1).repeat(1,30)
+        #maxvals=torch.unsqueeze(torch.tensor([163.0, 243.0, 267.0, 167.0, 162.0, 212.0, 289.0, 237.0]),dim=1).repeat(1,30)
+        #emg_values_pred = emg_values_pred.permute(1,0)
+        #print(emg_values.shape, maxvals.shape, emg_values_pred.shape)
+        #pdb.set_trace()
         emg_values = emg_values/maxvals
+        #pdb.set_trace()
 
         emg_values_pred = emg_values_pred/(maxvals/100)
         if not os.path.isdir(current_path + "/meshimgsfront/" ):
             os.makedirs(current_path + "/meshimgsfront/", 0o777)
         if not os.path.isdir(current_path + "/meshimgsback/" ):
             os.makedirs(current_path + "/meshimgsback/", 0o777)
+        if not os.path.isdir(current_path + "/meshimgstruth/" ):
+            os.makedirs(current_path + "/meshimgstruth/", 0o777)
+        if not os.path.isdir(current_path + "/meshimgspred/" ):
+            os.makedirs(current_path + "/meshimgspred/", 0o777)
+
+        if not os.path.isdir(current_path + "/meshimgpredfront/" ):
+            os.makedirs(current_path + "/meshimgpredfront/", 0o777)
+        if not os.path.isdir(current_path + "/meshimgpredback/" ):
+            os.makedirs(current_path + "/meshimgpredback/", 0o777)
+        if not os.path.isdir(current_path + "/meshimgtruthfront/" ):
+            os.makedirs(current_path + "/meshimgtruthfront/", 0o777)
+        if not os.path.isdir(current_path + "/meshimgbackfront/" ):
+            os.makedirs(current_path + "/meshimgbackfront/", 0o777)
+
             for i in range(len(frames)):
                 img=cv2.imread(frames[i])
+                #pdb.set_trace()
+                if frames[i].split("/")[-2].split("_")[1][2]=='4':
+                    back = cv2.imread('sruthibackpic.png')
+                else:
+                    back = cv2.imread('finalback.png')
                 
                 orig_height, orig_width = img.shape[:2]
                 mesh_filename = None
@@ -258,6 +366,7 @@ class MyLogger(logvisgen.Logger):
                     color=mc,
                     front=True,
                     mesh_filename=mesh_filename,
+                    pred=False,
                 )
 
                 imgback = self.renderer.render(
@@ -268,13 +377,14 @@ class MyLogger(logvisgen.Logger):
                     color=mc,
                     front=True,
                     mesh_filename=mesh_filename,
+                    pred=True,
                 )
                 img = np.concatenate([imgout, imgback], axis=1)
 
                 cv2.imwrite(os.path.join(current_path + "/meshimgsfront/", str(i).zfill(6) + '.png'), img)
 
-                imgout = self.renderer.render(
-                    img,
+                imgout2 = self.renderer.render(
+                    back,
                     frame_verts,
                     emg_values = emg_values[:,i],
                     cam=frame_cam,
@@ -283,8 +393,8 @@ class MyLogger(logvisgen.Logger):
                     mesh_filename=mesh_filename,
                 )
 
-                imgback = self.renderer.render(
-                    img,
+                imgback2 = self.renderer.render(
+                    back,
                     frame_verts,
                     emg_values = emg_values_pred[:,i],
                     cam=frame_cam,
@@ -292,15 +402,28 @@ class MyLogger(logvisgen.Logger):
                     front=False,
                     mesh_filename=mesh_filename,
                 )
-                imgback = np.concatenate([imgout, imgback], axis=1)
+                imgbackc = np.concatenate([imgout2, imgback2], axis=1)
+                imggt = np.concatenate([imgout, imgout2], axis=1)
+                imgpred = np.concatenate([imgback, imgback2], axis=1)
 
-                cv2.imwrite(os.path.join(current_path + "/meshimgsback/", str(i).zfill(6) + '.png'), imgback)
+                cv2.imwrite(os.path.join(current_path + "/meshimgsback/", str(i).zfill(6) + '.png'), imgbackc)
+                cv2.imwrite(os.path.join(current_path + "/meshimgstruth/", str(i).zfill(6) + '.png'), imggt)
+                cv2.imwrite(os.path.join(current_path + "/meshimgspred/", str(i).zfill(6) + '.png'), imgpred)
 
             command = ['ffmpeg', '-framerate', '10', '-i',f'{current_path}/meshimgsfront' +'/%06d.png',  '-c:v', 'libx264','-pix_fmt', 'yuv420p', f'{current_path}/' + 'meshfront.mp4']
             commandback = ['ffmpeg', '-framerate', '10', '-i',f'{current_path}/meshimgsback' +'/%06d.png',  '-c:v', 'libx264','-pix_fmt', 'yuv420p', f'{current_path}/' + 'meshback.mp4']
+            commandtruth = ['ffmpeg', '-framerate', '10', '-i',f'{current_path}/meshimgstruth' +'/%06d.png',  '-c:v', 'libx264','-pix_fmt', 'yuv420p', f'{current_path}/' + 'meshtruth.mp4']
+            commandpred = ['ffmpeg', '-framerate', '10', '-i',f'{current_path}/meshimgspred' +'/%06d.png',  '-c:v', 'libx264','-pix_fmt', 'yuv420p', f'{current_path}/' + 'meshpred.mp4']
+
 
             print(f'Running \"{" ".join(command)}\"')
             subprocess.call(command)
+
+            print(f'Running \"{" ".join(commandtruth)}\"')
+            subprocess.call(commandtruth)
+
+            print(f'Running \"{" ".join(commandpred)}\"')
+            subprocess.call(commandpred)
 
             print(f'Running \"{" ".join(commandback)}\"')
             subprocess.call(commandback)
@@ -343,22 +466,30 @@ class MyLogger(logvisgen.Logger):
                                         frames=numDataPoints)
         print("saving_animation")
         #FFwriter = animation.FFMpegWriter(fps=10, extra_args=['-vcodec', 'h264_v4l2m2m'])
-        line_ani.save(current_path + "/epoch_" + str(epoch) + "_" + str(part) + '_emg.mp4')
+        line_ani.save(current_path + "/" + str(part) + '_emg.mp4')
 
     def handle_val_step(self, epoch, phase, cur_step, total_step, steps_per_epoch,
                             data_retval, model_retval, loss_retval):
+
+            model_retval['emg_output'] = model_retval['emg_output'] #.permute(0,2,1)
 
             if cur_step % self.step_interval == 0:
 
                 exemplar_idx = (cur_step // self.step_interval) % self.num_exemplars
 
                 total_loss = loss_retval['total']
-                for j in range(data_retval['bboxes'].shape[0]):
+                for j in range(data_retval['2dskeleton'].shape[0]):
                     framelist = [data_retval['frame_paths'][i][j] for i in range(len(data_retval['frame_paths']))]
-                    
+
+                    #if '2107' in data_retval['frame_paths'][0][0]:
+                    movie = framelist[0].split("/")[-2]
+                    current_path = "../../www-data/mia/muscleresults/" + self.args.name + '_' + phase + '_viz_digitized/' + movie + "/" + str(cur_step) + "/" + str(j)
+                    if not os.path.isdir(current_path):
+                        os.makedirs(current_path, 0o777)
                     current_path = self.visualize_video(framelist,data_retval['2dskeleton'][j],cur_step,j,phase,framelist[0].split("/")[-2])
-                    threedskeleton = data_retval['3dskeleton'][j]
-                    current_path = self.visualize_skeleton(threedskeleton,data_retval['bboxes'][j],data_retval['predcam'][j],cur_step,j,phase,framelist[0].split("/")[-2])
+                   # threedskeleton = data_retval['3dskeleton'][j]
+                    #current_path = self.visualize_skeleton(threedskeleton,data_retval['bboxes'][j],data_retval['predcam'][j],cur_step,j,phase,framelist[0].split("/")[-2])
+                    #pdb.set_trace()
                     self.visualize_mesh_activation(data_retval['verts'][j],data_retval['orig_cam'][j],framelist, data_retval['emg_values'][j],model_retval['emg_output'][j].cpu().detach(),current_path)
                     
                     if self.classif:
@@ -369,11 +500,28 @@ class MyLogger(logvisgen.Logger):
                         
                         self.animate([gt_values.numpy()],[pred_values.detach().numpy()],['left_quad'],'leftleg',2,current_path,epoch)
                     else:
+                        #pdb.set_trace()
+                        gtnp = model_retval['emg_gt'].detach().cpu().numpy()
+                        prednp = model_retval['emg_output'].detach().cpu().numpy()
+                        np.save(current_path + "/gtnp" + str(cur_step) + ".npy",gtnp)
+                        np.save(current_path + "/prednp" + str(cur_step) + ".npy",prednp)
                         rangeofmuscles=['rightquad','rightham','rightbicep','righttricep','leftquad','leftham','leftbicep','lefttricep']
-                        for i in range(8):
+                        #rangeofmuscles=['rightquad','leftquad']
+                        """for i in range(model_retval['emg_gt'].shape[1]):
                             gt_values = model_retval['emg_gt'][j,i,:].cpu()*100
                             #gt_values[gt_values>100.0] = 100.0
                             pred_values = model_retval['emg_output'][j][i].cpu()*100.0
+                            #pdb.set_trace()
+                            self.animate([gt_values.numpy()],[pred_values.detach().numpy()],[rangeofmuscles[i]],rangeofmuscles[i],2,current_path,epoch)"""
+                        ###DEBUG
+                        for i in range(model_retval['emg_gt'].shape[1]):
+                            gt_values = model_retval['emg_gt'][j,i,:].cpu()*100
+                            #gt_values[gt_values>100.0] = 100.0
+                            #if i == 1:
+                            #    pred_values = model_retval['emg_output'][j][4].cpu()*100.0
+                            #else:
+                            pred_values = model_retval['emg_output'][j][i].cpu()*100.0
+                            #pdb.set_trace()
                             self.animate([gt_values.numpy()],[pred_values.detach().numpy()],[rangeofmuscles[i]],rangeofmuscles[i],2,current_path,epoch)
                     
 

@@ -73,9 +73,11 @@ class MyLosses():
 
         list_of_movienames = []
     
-        v = loss_retval['cross_ent']
-        """if torch.is_tensor(v):
+        """v = loss_retval['cross_ent']
+        print(v.shape)
+        if torch.is_tensor(v):
             for i in range(v.shape[0]):
+                print(len(data_retval['frame_paths']),data_retval['frame_paths'][0].shape)
                 moviename = data_retval['frame_paths'][0][i].split("/")[-2].split("_")[1]
                 list_of_movienames.append(moviename)
                 if moviename in loss_retval.keys():

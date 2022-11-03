@@ -103,49 +103,20 @@ class MyTrainPipeline(torch.nn.Module):
         '''
         cur = time.time()
         twodskeleton = data_retval['2dskeleton']
-        twodskeleton = twodskeleton.reshape(twodskeleton.shape[0],twodskeleton.shape[1],-1)
+        #twodskeleton = twodskeleton.reshape(twodskeleton.shape[0],twodskeleton.shape[1],-1)
 
-
-        threedskeleton = data_retval['3dskeleton']
-        bboxes = data_retval['bboxes']
-        predcam = data_retval['predcam']
-        proj = 5000.0
-        
-        #pdb.set_trace()
-        height= bboxes[:,:,2:3].reshape(bboxes.shape[0]*bboxes.shape[1])
-        center = bboxes[:,:,:2].reshape(bboxes.shape[0]*bboxes.shape[1],-1)
-        focal=torch.tensor([[proj]]).to(self.device).repeat(height.shape[0],1)
-        predcamelong = predcam.reshape(predcam.shape[0]*predcam.shape[1],-1)
-        translation = self.convert_pare_to_full_img_cam(predcamelong,height,center,1080,1920,focal[:,0])
-        reshapethreed= threedskeleton.reshape(threedskeleton.shape[0]*threedskeleton.shape[1],threedskeleton.shape[2],threedskeleton.shape[3])
-        rotation=torch.unsqueeze(torch.eye(3),dim=0).repeat(reshapethreed.shape[0],1,1).to(self.device)
-        focal=torch.tensor([[proj]]).to(self.device).repeat(translation.shape[0],1)
-        imgdimgs=torch.unsqueeze(torch.tensor([1080.0/2, 1920.0/2]),dim=0).repeat(reshapethreed.shape[0],1).to(self.device)
-        twodkpts, skeleton = self.perspective_projection(reshapethreed, rotation, translation.float(),focal[:,0], imgdimgs)
-        #skeleton = skeleton.reshape(twodskeleton.shape[0],30,skeleton.shape[1],skeleton.shape[2])
-        #skeleton = skeleton.reshape(skeleton.shape[0],skeleton.shape[1],-1)
-        twodkpts = twodkpts.reshape(twodskeleton.shape[0],(self.train_args.step),twodkpts.shape[1],twodkpts.shape[2])
-        divide = torch.unsqueeze(torch.unsqueeze(torch.unsqueeze(torch.tensor([1080.0,1920.0]),dim=0),dim=0),dim=0).repeat(twodkpts.shape[0],twodkpts.shape[1],twodkpts.shape[2],1).to(self.device)
-        twodkpts = twodkpts/divide
+        divide = torch.unsqueeze(torch.unsqueeze(torch.unsqueeze(torch.tensor([1080.0,1920.0]),dim=0),dim=0),dim=0).repeat(twodskeleton.shape[0],twodskeleton.shape[1],twodskeleton.shape[2],1).to(self.device)
+        twodkpts = twodskeleton/divide
         #pdb.set_trace()
         #
         #if self.train_args.modelname != 'transf':
-        twodkpts = twodkpts.reshape(twodskeleton.shape[0],twodkpts.shape[1],-1)
+        twodkpts = twodkpts.reshape(twodskeleton.shape[0],twodkpts.shape[1],-1).to(self.device)
     
         bined_left_quad = data_retval['bined_left_quad']-1
         emggroundtruth = data_retval['emg_values'].to(self.device)
         cond = data_retval['cond'].to(self.device)
         emggroundtruth = emggroundtruth/100.0
 
-        leftquad = data_retval['left_quad'].to(self.device)
-        leftquad = leftquad/100.0
-        leftquad[leftquad > 1.0] = 1.0
-        bins = data_retval['bins']
-        #bined_left_quad = bined_left_quad.to(self.device)-1
-        twodskeleton = twodskeleton.to(self.device)
-        cur2 = time.time()
-        #print(cur2-cur,"2")
-        cur = cur2
         if self.train_args.modelname == 'transf':
             emg_output = self.my_model(twodkpts) #, cond
         else:
@@ -162,19 +133,10 @@ class MyTrainPipeline(torch.nn.Module):
             #print(leftquad[:,:])
             model_retval['emg_output'] = emg_output[:,:,0,:]
         else:
-            mask = torch.ones(emg_output.shape).type(torch.cuda.FloatTensor)
-            for i in range(emg_output.shape[0]):                
-                if '2423' in data_retval['frame_paths'][0][i]:
-                    mask[i,4,:] = 1.0
-            total_loss = self.mse(emg_output*mask, (emggroundtruth*mask).type(torch.cuda.FloatTensor))
+            total_loss_r = self.mse(emg_output[:,4,:], (emggroundtruth[:,1,:]).type(torch.cuda.FloatTensor))
+            total_loss_l = self.mse(emg_output[:,0,:], (emggroundtruth[:,0,:]).type(torch.cuda.FloatTensor))
+            total_loss = total_loss_r + total_loss_l
             model_retval['emg_output'] = emg_output[:,:,:]
-        """else:
-            loss = self.crossent(emg_output, bined_left_quad.type(torch.cuda.LongTensor))
-        
-            list_of_values = []
-            _, ix = torch.topk(emg_output, k=1, dim=1)
-            values = torch.index_select(bins[0], 0, ix[0,0,:])
-            model_retval['emg_bins'] = torch.unsqueeze(values,dim=0)"""
 
         model_retval['emg_gt'] = emggroundtruth
         

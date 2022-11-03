@@ -124,6 +124,21 @@ class Renderer:
                 elif k == 'leftUpLeg':
                     alpha_values[v]=0.0 #1-emg_values[0]
                     vertex_labels[v] = 0
+                    if pred:
+                        vertex_colors[v] = np.array([0,0,int(emg_values[4]*255),255])
+                    else:
+                        vertex_colors[v] = np.array([0,0,int(emg_values[1]*255),255])
+                else:
+                    alpha_values[v] = 1.0
+                    vertex_labels[v] = 4
+                    vertex_colors[v] = np.array([222, 222, 222,255])
+                """if k == 'rightUpLeg':
+                    alpha_values[v]=0.0 #1-emg_values[1]
+                    vertex_labels[v] = 0
+                    vertex_colors[v] = np.array([0,0,int(emg_values[0]*255),255])
+                elif k == 'leftUpLeg':
+                    alpha_values[v]=0.0 #1-emg_values[0]
+                    vertex_labels[v] = 0
                     vertex_colors[v] = np.array([0,0,int(emg_values[4]*255),255])
                 elif k == 'leftArm':
                     alpha_values[v]=0.0 #1-emg_values[5]
@@ -133,11 +148,31 @@ class Renderer:
                     alpha_values[v]=0.0 #1-emg_values[4]
                     vertex_labels[v] = 0
                     vertex_colors[v] = np.array([0,0,int(emg_values[2]*255),255])
+                elif k == 'neck':
+                    alpha_values[v]=0.0
+                    vertex_labels[v] = 0
+                    vertex_colors[v] = np.array([0,0,255,255])
                 else:
                     alpha_values[v] = 1.0
                     vertex_labels[v] = 4
-                    vertex_colors[v] = np.array([150, 150, 150,255])
+                    vertex_colors[v] = np.array([222, 222, 222,255])"""
             else:
+                if k == 'rightUpLeg':
+                    alpha_values[v]=0.0 #1-emg_values[1]
+                    vertex_labels[v] = 0
+                    vertex_colors[v] = np.array([0,0,int(emg_values[0]*255),255])
+                elif k == 'leftUpLeg':
+                    alpha_values[v]=0.0 #1-emg_values[0]
+                    vertex_labels[v] = 0
+                    if pred:
+                        vertex_colors[v] = np.array([0,0,int(emg_values[4]*255),255])
+                    else:
+                        vertex_colors[v] = np.array([0,0,int(emg_values[1]*255),255])
+                else:
+                    alpha_values[v] = 1.0
+                    vertex_labels[v] = 4
+                    vertex_colors[v] = np.array([222, 222, 222,255])
+                """
                 if k == 'rightUpLeg':
                     alpha_values[v]=1-emg_values[3]
                     vertex_labels[v] = 0
@@ -154,10 +189,14 @@ class Renderer:
                     alpha_values[v]=1-emg_values[6]
                     vertex_labels[v] = 0
                     vertex_colors[v] = np.array([0,0,int(emg_values[3]*255),255])
+                elif k == 'neck':
+                    alpha_values[v]=0.0
+                    vertex_labels[v] = 0
+                    vertex_colors[v] = np.array([0,0,255,255])
                 else:
                     alpha_values[v] = 1
                     vertex_labels[v] = 4
-                    vertex_colors[v] = np.array([150, 150, 150,255])
+                    vertex_colors[v] = np.array([222, 222, 222,255])"""
 
         #vertex_colors = np.ones((n_vertices, 4))
         #vertex_colors = np.ones((n_vertices, 3))*255

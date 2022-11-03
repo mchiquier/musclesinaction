@@ -22,7 +22,7 @@ import musclesinaction.losses.loss as loss
 import musclesinaction.models.model as model
 import vis.logvis as logvis
 import musclesinaction.utils.utils as utils
-import pipeline
+import pipeline as pipeline
 
 def _get_learning_rate(optimizer):
     for param_group in optimizer.param_groups:
@@ -97,16 +97,14 @@ def _train_one_epoch(args, train_pipeline, phase, epoch, optimizer,
             optimizer.step()
 
         # Print and visualize stuff.
-        """"if phase == 'eval':
+        """if phase == 'eval':
             logger.handle_train_step(epoch, phase, cur_step, total_step, steps_per_epoch,
-                           data_retval, model_retval, loss_retval)
+                           data_retval, model_retval, loss_retval)"""
         if phase=='val':
-
+            #pdb.set_trace()
             logger.handle_val_step(epoch, phase, cur_step, total_step, steps_per_epoch,
-                        data_retval, model_retval, loss_retval)"""
-
-            
-
+                        data_retval, model_retval, loss_retval)
+        #print("here")
         # DEBUG:
         if cur_step >= 256 and 'dbg' in args.name:
             logger.warning('Cutting epoch short for debugging...')
@@ -125,9 +123,9 @@ def _train_all_epochs(args, train_pipeline, optimizer, lr_scheduler, start_epoch
     for epoch in range(start_epoch, args.num_epochs):
 
         # Training.
-        _train_one_epoch(
+        """_train_one_epoch(
             args, train_pipeline, 'train', epoch, optimizer,
-            lr_scheduler, train_loader, val_aug_loader, device, logger)
+            lr_scheduler, train_loader, val_aug_loader, device, logger)"""
         
         """_train_one_epoch(
             args, train_pipeline, 'eval', epoch, optimizer,
@@ -204,8 +202,9 @@ def main(args, logger):
         'num_decoder_layers':int(args.num_decoder_layers),
         'dropout_p':float(args.dropout_p),
         'device': args.device,
-        'embedding': args.embedding}
-        model = transmodelbert.TransformerEnc(**model_args)
+        'embedding': args.embedding,
+        'step': int(args.step)}
+        model = transmodel.TransformerEnc(**model_args)
     elif args.modelname == 'old':
         model_args = {
         'device': args.device}

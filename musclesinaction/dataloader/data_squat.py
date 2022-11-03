@@ -166,13 +166,13 @@ class MyMuscleDataset(torch.utils.data.Dataset):
         'IMG_2111_30.MOV','IMG_2112_30.MOV','IMG_2125_30.MOV','IMG_2129_30.MOV','IMG_2098_30.MOV',
         'IMG_2103_30.MOV','IMG_2107_30.MOV','IMG_2113_30.MOV','IMG_2126_30.MOV','IMG_2131_30.MOV',
         ]"""
-        #self.videos = ['IMG_squatright_30.MOV', 'IMG_squatwrong_30.MOV']
+        self.videos = ['IMG_squatright_30.MOV', 'IMG_squatwrong_30.MOV']
         #self.videos = ['IMG_2403_30.MOV','IMG_2411_30.MOV','IMG_2412_30.MOV', 'IMG_2414_30.MOV',
         #'IMG_2415_30.MOV']
-        self.videos = ['IMG_2096_30.MOV','IMG_2097_30.MOV','IMG_2099_30.MOV','IMG_2100_30.MOV','IMG_2101_30.MOV',
+        """self.videos = ['IMG_2096_30.MOV','IMG_2097_30.MOV','IMG_2099_30.MOV','IMG_2100_30.MOV','IMG_2101_30.MOV',
         'IMG_2104_30.MOV','IMG_2105_30.MOV','IMG_2108_30.MOV','IMG_2109_30.MOV','IMG_2110_30.MOV',
         'IMG_2111_30.MOV','IMG_2112_30.MOV','IMG_2125_30.MOV','IMG_2129_30.MOV','IMG_2098_30.MOV',
-        'IMG_2103_30.MOV','IMG_2107_30.MOV','IMG_2113_30.MOV','IMG_2126_30.MOV','IMG_2131_30.MOV']
+        'IMG_2103_30.MOV','IMG_2107_30.MOV','IMG_2113_30.MOV','IMG_2126_30.MOV','IMG_2131_30.MOV']"""
         """self.videos = ['IMG_2419_30.MOV','IMG_2420_30.MOV','IMG_2422_30.MOV', 'IMG_2404_30.MOV',
         'IMG_2426_30.MOV','IMG_2405_30.MOV','IMG_2409_30.MOV','IMG_2410_30.MOV',
         'IMG_2411_30.MOV','IMG_2412_30.MOV','IMG_2403_30.MOV','IMG_2413_30.MOV',
@@ -280,25 +280,21 @@ class MyMuscleDataset(torch.utils.data.Dataset):
         list_of_verts = []
         filepath = self.all_files[index].split(",")
         for i in range(self.step):
-            frame1=pathtoframes + "/" + filepath[2+i*17].zfill(6) + ".png"
-            frame2=pathtoframes +  "/" + filepath[3+i*17].zfill(6) + ".png"
-            frame3=pathtoframes +  "/" + filepath[4+i*17].zfill(6) + ".png"
+            frame1=pathtoframes + "/" + filepath[2+i*13].zfill(6) + ".png"
+            frame2=pathtoframes +  "/" + filepath[3+i*13].zfill(6) + ".png"
+            frame3=pathtoframes +  "/" + filepath[4+i*13].zfill(6) + ".png"
             list_of_frame_paths.append(frame1)
-            pickleframe1= int(filepath[5+i*17].split("/")[-1])
-            pickleframe2=int(filepath[6+i*17].split("/")[-1])
-            pickleframe3=int(filepath[7+i*17].split("/")[-1])
-            emgvalues = filepath[8+i*17:17+i*17]
+            pickleframe1= int(filepath[5+i*13].split("/")[-1])
+            pickleframe2=int(filepath[6+i*13].split("/")[-1])
+            pickleframe3=int(filepath[7+i*13].split("/")[-1])
+            emgvalues = filepath[8+i*13:13+i*13]
             emgvalues[-1] = emgvalues[-1].split("\n")[0]
             list_of_emg_values_rightquad.append(float(emgvalues[0]))
             list_of_emg_values_rightham.append(float(emgvalues[2]))
-            list_of_emg_values_rightbicep.append(float(emgvalues[4]))
 
             list_of_emg_values_leftquad.append(float(emgvalues[1]))
             list_of_emg_values_leftham.append(float(emgvalues[3]))
-            list_of_emg_values_leftbicep.append(float(emgvalues[5]))
 
-            list_of_emg_values_righttricep.append(float(emgvalues[6]))
-            list_of_emg_values_lefttricep.append(float(emgvalues[7]))
 
             total = self.pickledict[pathtoframes.split("/")[-1].split("_")[1]]
             
@@ -358,9 +354,7 @@ class MyMuscleDataset(torch.utils.data.Dataset):
                 plt.scatter(firstjoints2dframe[:,0],firstjoints2dframe[:,1],s=40)
                 plt.savefig(current_path + "/" + str(index+i) + ".png")
 
-        emg_values = [list_of_emg_values_rightquad,list_of_emg_values_rightham,
-        list_of_emg_values_rightbicep,list_of_emg_values_righttricep,list_of_emg_values_leftquad,
-        list_of_emg_values_leftham,list_of_emg_values_leftbicep,list_of_emg_values_lefttricep]
+        emg_values = [list_of_emg_values_rightham,list_of_emg_values_leftham]
 
         #emg_values = [list_of_emg_values_rightquad,list_of_emg_values_rightham,
         #list_of_emg_values_leftquad,list_of_emg_values_leftham]

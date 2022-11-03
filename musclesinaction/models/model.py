@@ -41,12 +41,13 @@ class PositionalEncoding(nn.Module):
         pos_encoding[:, 1::2] = torch.cos(positions_list * division_term)
         
         # Saving buffer (same as parameter without gradients needed)
-        pos_encoding = pos_encoding.unsqueeze(0).transpose(0, 1)
+        pos_encoding = pos_encoding.unsqueeze(0)
         self.register_buffer("pos_encoding",pos_encoding)
         
     def forward(self, token_embedding: torch.tensor) -> torch.tensor:
         # Residual connection + pos encoding
-        return self.dropout(token_embedding + self.pos_encoding[:token_embedding.size(0), :])
+        #pdb.set_trace()
+        return self.dropout(token_embedding + self.pos_encoding)
 
 class TransformerEnc(nn.Module):
     """
@@ -65,7 +66,8 @@ class TransformerEnc(nn.Module):
         num_decoder_layers,
         dropout_p,
         device,
-        embedding
+        embedding,
+        step
     ):
         super().__init__()
 
@@ -77,27 +79,21 @@ class TransformerEnc(nn.Module):
 
         # LAYERS
         self.positional_encoder = PositionalEncoding(
-            dim_model=dim_model, dropout_p=dropout_p, max_len=30
+            dim_model=128, dropout_p=dropout_p, max_len=int(step)
         )
 
-        self.embedding = nn.Linear(num_tokens, dim_model) #ALTERNATIVE
+        self.jointdim = nn.Linear(128, 8) #ALTERNATIVE
+        self.conv1 = nn.Conv2d(1,128,(50,9),(1,1),(0,4))
         self.relu = nn.ReLU()
         self.bn = nn.BatchNorm1d(dim_model) #B,S,D
         
         #self.clipproj = nn.Linear(512,256)
-        self.encoder_layer = nn.TransformerEncoderLayer(d_model=dim_model, nhead=num_heads)
+        self.encoder_layer = nn.TransformerEncoderLayer(d_model=128, nhead=num_heads)
         self.transformer0 = nn.TransformerEncoder(self.encoder_layer, num_layers=num_encoder_layers)
         
         self.num_classes8 = num_classes
         if not self.classif:
-            self.out0 = nn.Linear(dim_model, 1)
-            self.out1 = nn.Linear(dim_model, 1)
-            self.out2 = nn.Linear(dim_model, 1)
-            self.out3 = nn.Linear(dim_model, 1)
-            self.out4 = nn.Linear(dim_model, 1)
-            self.out5 = nn.Linear(dim_model, 1)
-            self.out6 = nn.Linear(dim_model, 1)
-            self.out7 = nn.Linear(dim_model, 1)
+            self.out0 = nn.Linear(dim_model, 8)
         else:
             self.out = nn.Linear(dim_model, self.num_classes)
         
@@ -106,52 +102,32 @@ class TransformerEnc(nn.Module):
         # Tgt size must be (batch_size, tgt sequence length)
 
         src = src.float()* math.sqrt(self.dim_model) 
-        src = self.embedding(src)
-        src = src.permute(0,2,1)
-        src = self.bn(src)
-        src = src.permute(0,2,1)
+
+        src = torch.unsqueeze(src,dim=1).permute(0,1,3,2)
+        #pdb.set_trace()
+        src = self.conv1(src)[:,:,0,:].permute(0,2,1)
         
+        #newcond = torch.unsqueeze(cond,dim=1).repeat(1,30,2).type(torch.cuda.FloatTensor)
         src = self.positional_encoder(src)
+        #newsrc = torch.cat([src,newcond],dim=2)
         
         # We could use the parameter batch_first=True, but our KDL version doesn't support it yet, so we permute
         # to obtain size (sequence length, batch_size, dim_model),
-        src = src.permute(1,0,2)#src.permute(1,0,2)
+        src = src.permute(1,0,2) #newsrc.permute(1,0,2)#
 
         # Transformer blocks - Out size = (sequence length, batch_size, num_tokens)
         transformer_out = self.transformer0(src,src_key_padding_mask=src_pad_mask)
        
         #transformer_out = self.transformer(src, tgt, tgt_mask=tgt_mask, src_key_padding_mask=src_pad_mask, tgt_key_padding_mask=tgt_pad_mask)
         out0 = self.out0(transformer_out)
-        out1 = self.out1(transformer_out)
-        out2 = self.out2(transformer_out)
-        out3 = self.out3(transformer_out)
-        out4 = self.out4(transformer_out)
-        out5 = self.out5(transformer_out)
-        out6 = self.out6(transformer_out)
-        out7 = self.out7(transformer_out)
+        
         out0 = out0.permute(1,2,0)
-        out1 = out1.permute(1,2,0)
-        out2 = out2.permute(1,2,0)
-        out3 = out3.permute(1,2,0)
-        out4 = out4.permute(1,2,0)
-        out5 = out5.permute(1,2,0)
-        out6 = out6.permute(1,2,0)
-        out7 = out7.permute(1,2,0)
         
         #out = out.permute(1,2,0)
         if not self.classif:
             out0 = self.relu(out0)
-            out1 = self.relu(out1)
-            out2 = self.relu(out2)
-            out3 = self.relu(out3)
-            out4 = self.relu(out4)
-            out5 = self.relu(out5)
-            out6 = self.relu(out6)
-            out7 = self.relu(out7)
-
-        out = torch.cat([out0,out1,out2,out3,out4,out5,out6,out7],dim=1)
-
-        return out  
+           
+        return out0
       
     def get_tgt_mask(self, size) -> torch.tensor:
         # Generates a squeare matrix where the each row allows one word more to be seen

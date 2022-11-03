@@ -8,6 +8,7 @@ import musclesinaction.configs.args as args
 import musclesinaction.vis.logvis as logvis
 import pdb
 import tqdm
+import pdb
 
 def main(args, logger):
 
@@ -22,11 +23,15 @@ def main(args, logger):
 
     # Instantiate datasets.
     start_time = time.time()
-    (train_loader, val_aug_loader, val_noaug_loader, dset_args) = \
-        data.create_train_val_data_loaders(args, logger)
-
+    (train_loader, train_loader_noshuffle, val_aug_loader, val_aug_loader, dset_args) = data.create_train_val_data_loaders(args, logger)
+    finallist = [0,0,0,0,0,0,0,0]
     for cur_step, data_retval in enumerate(tqdm.tqdm(train_loader)):
-        print("hi")
+        curlist = torch.max(data_retval['emg_values'],dim=2).values.tolist()[0]
+        for i,elem in enumerate(curlist):
+            if elem > finallist[i]:
+                finallist[i] = elem
+    
+    pdb.set_trace()
 
 if __name__ == '__main__':
 
