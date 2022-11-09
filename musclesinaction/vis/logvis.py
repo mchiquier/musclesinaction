@@ -4,6 +4,7 @@ Logging and visualization logic.
 
 import musclesinaction.vis.logvisgen as logvisgen
 from musclesinaction.vis.renderer import Renderer
+
 import pdb
 import csv
 import wandb
@@ -196,12 +197,21 @@ class MyLogger(logvisgen.Logger):
             os.makedirs(current_path, 0o777)
         if not os.path.isdir(current_path + '/skeletonimgs'):
             os.makedirs(current_path + '/skeletonimgs', 0o777)
+        if not os.path.isdir(current_path + '/frames'):
+            os.makedirs(current_path + '/frames', 0o777)
         for i in range(len(frames)):
             #pdb.set_trace()
             img=cv2.imread(frames[i])
-            img = img[...,::-1]
+            img = (img*1.0).astype('int')
+
+            
             cur_skeleton = twodskeleton[i].cpu().numpy()
-            self.plot_skel(cur_skeleton,img, current_path, i)
+            blurimg = img[int(cur_skeleton[0][1]) - 100:int(cur_skeleton[0][1]) + 100, int(cur_skeleton[0][0]) - 100:int(cur_skeleton[0][0]) + 100]
+            if int(cur_skeleton[0][1]) - 100 > 0 and int(cur_skeleton[0][1]) + 100 < img.shape[0] and int(cur_skeleton[0][0]) - 100 > 0 and int(cur_skeleton[0][0]) + 100 <img.shape[1]:
+                blurred_part = cv2.blur(blurimg, ksize=(50, 50))
+                img[int(cur_skeleton[0][1]) - 100:int(cur_skeleton[0][1]) + 100, int(cur_skeleton[0][0]) - 100:int(cur_skeleton[0][0]) + 100] = blurred_part
+            self.plot_skel(cur_skeleton,img[...,::-1], current_path, i)
+            cv2.imwrite(current_path + "/" + 'frames/' + str(i).zfill(6) + ".png", img)
                 #plt.figure()
                 #plt.imshow(img)
                 #plt.scatter(cur_skeleton[:,0],cur_skeleton[:,1],s=40)
@@ -310,12 +320,18 @@ class MyLogger(logvisgen.Logger):
 
         return current_path
 
-    def visualize_mesh_activation(self,list_of_verts,list_of_origcam,frames, emg_values,emg_values_pred,current_path):
+    def visualize_mesh_activation(self,twodskeleton, list_of_verts,list_of_origcam,frames, emg_values,emg_values_pred,current_path):
         #maxvals = torch.ones(emg_values.shape)*200.0
 
         # DEBUG #
         #pdb.set_trace()
+        #if frames[0].split("/")[-2].split("_")[1][2]=='4':
+        
         maxvals = torch.unsqueeze(torch.tensor([139,174,155,127,113,246,84,107]),dim=1).repeat(1,30)
+        #maxvals=torch.unsqueeze(torch.tensor([163.0, 243.0, 267.0, 167.0, 162.0, 212.0, 289.0, 237.0]),dim=1).repeat(1,30)
+        #else:
+        #maxvals = torch.unsqueeze(torch.tensor([139,174,155,127,113,246,84,107]),dim=1).repeat(1,30)
+        #maxvals = torch.unsqueeze(torch.tensor([139,174,155,127,113,246,84,107]),dim=1).repeat(1,30)
         #maxvals = torch.unsqueeze(torch.tensor([70,70]),dim=1).repeat(1,30)
         #maxvalspred = torch.unsqueeze(torch.tensor([70,70,70,70,70,70,70,70]),dim=1).repeat(1,30)
         #maxvals=torch.unsqueeze(torch.tensor([163.0, 243.0, 267.0, 167.0, 162.0, 212.0, 289.0, 237.0]),dim=1).repeat(1,30)
@@ -323,6 +339,7 @@ class MyLogger(logvisgen.Logger):
         #print(emg_values.shape, maxvals.shape, emg_values_pred.shape)
         #pdb.set_trace()
         emg_values = emg_values/maxvals
+        
         #pdb.set_trace()
 
         emg_values_pred = emg_values_pred/(maxvals/100)
@@ -341,92 +358,172 @@ class MyLogger(logvisgen.Logger):
             os.makedirs(current_path + "/meshimgpredback/", 0o777)
         if not os.path.isdir(current_path + "/meshimgtruthfront/" ):
             os.makedirs(current_path + "/meshimgtruthfront/", 0o777)
-        if not os.path.isdir(current_path + "/meshimgbackfront/" ):
-            os.makedirs(current_path + "/meshimgbackfront/", 0o777)
+        if not os.path.isdir(current_path + "/meshimgtruthback/" ):
+            os.makedirs(current_path + "/meshimgtruthback/", 0o777)
+        if not os.path.isdir(current_path + "/meshimgsnobkgdfront/" ):
+            os.makedirs(current_path + "/meshimgsnobkgdfront/", 0o777)
+        if not os.path.isdir(current_path + "/meshimgsnobkgdback/" ):
+            os.makedirs(current_path + "/meshimgsnobkgdback/", 0o777)
+        if not os.path.isdir(current_path + "/meshimgsnobkgdfrontpred/" ):
+            os.makedirs(current_path + "/meshimgsnobkgdfrontpred/", 0o777)
+        if not os.path.isdir(current_path + "/meshimgsnobkgdbackpred/" ):
+            os.makedirs(current_path + "/meshimgsnobkgdbackpred/", 0o777)
 
-            for i in range(len(frames)):
-                img=cv2.imread(frames[i])
-                #pdb.set_trace()
-                if frames[i].split("/")[-2].split("_")[1][2]=='4':
-                    back = cv2.imread('sruthibackpic.png')
-                else:
-                    back = cv2.imread('finalback.png')
-                
-                orig_height, orig_width = img.shape[:2]
-                mesh_filename = None
-                mc = (255, 255, 255)
-                frame_verts = list_of_verts[i]
-                frame_cam = list_of_origcam[i]
+        
 
-                imgout = self.renderer.render(
-                    img,
-                    frame_verts,
-                    emg_values = emg_values[:,i],
-                    cam=frame_cam,
-                    color=mc,
-                    front=True,
-                    mesh_filename=mesh_filename,
-                    pred=False,
-                )
+        for i in range(len(frames)):
+            cur_skeleton = twodskeleton[i].cpu().numpy()
+            img=cv2.imread(frames[i])
+            img = (img*1.0).astype('int')
+            if int(cur_skeleton[0][1]) - 100 > 0 and int(cur_skeleton[0][1]) + 100 < img.shape[0] and int(cur_skeleton[0][0]) - 100 > 0 and int(cur_skeleton[0][0]) + 100 <img.shape[1]:
+                blurimg = img[int(cur_skeleton[0][1]) - 100:int(cur_skeleton[0][1]) + 100, int(cur_skeleton[0][0]) - 100:int(cur_skeleton[0][0]) + 100]
+                blurred_part = cv2.blur(blurimg, ksize=(50, 50))
+                img[int(cur_skeleton[0][1]) - 100:int(cur_skeleton[0][1]) + 100, int(cur_skeleton[0][0]) - 100:int(cur_skeleton[0][0]) + 100] = blurred_part
+            #img = img[...,::-1]
+            #pdb.set_trace()
+            #if frames[i].split("/")[-2].split("_")[1][2]=='4':
+            #    back = cv2.imread('sruthibackpic.png')
+            #else:
+            #    back = cv2.imread('finalback.png')
+            back = cv2.imread('finalback.png')
+            #back = cv2.imread('sruthibackpic.png')
+            back = (back*1.0).astype('int')
+            #back = cv2.imread('sruthibackpic.png')
+            
+            orig_height, orig_width = img.shape[:2]
+            mesh_filename = None
+            mc = (0, 0, 0)
+            frame_verts = list_of_verts[i]
+            frame_cam = list_of_origcam[i]
 
-                imgback = self.renderer.render(
-                    img,
-                    frame_verts,
-                    emg_values = emg_values_pred[:,i],
-                    cam=frame_cam,
-                    color=mc,
-                    front=True,
-                    mesh_filename=mesh_filename,
-                    pred=True,
-                )
-                img = np.concatenate([imgout, imgback], axis=1)
+            fronttruthimg = self.renderer.render(
+                img,
+                frame_verts,
+                emg_values = emg_values[:,i],
+                cam=frame_cam,
+                color=mc,
+                front=True,
+                mesh_filename=mesh_filename,
+                pred=False,
+            )
 
-                cv2.imwrite(os.path.join(current_path + "/meshimgsfront/", str(i).zfill(6) + '.png'), img)
+            fronttruthimgnobkgd = self.renderer.render(
+                np.ones(img.shape),
+                frame_verts,
+                emg_values = emg_values[:,i],
+                cam=frame_cam,
+                color=mc,
+                front=True,
+                mesh_filename=mesh_filename,
+                pred=False,
+            )
 
-                imgout2 = self.renderer.render(
-                    back,
-                    frame_verts,
-                    emg_values = emg_values[:,i],
-                    cam=frame_cam,
-                    color=mc,
-                    front=False,
-                    mesh_filename=mesh_filename,
-                )
+            frontpredimgnobkgd = self.renderer.render(
+                np.ones(img.shape),
+                frame_verts,
+                emg_values = emg_values[:,i],
+                cam=frame_cam,
+                color=mc,
+                front=True,
+                mesh_filename=mesh_filename,
+                pred=True,
+            )
 
-                imgback2 = self.renderer.render(
-                    back,
-                    frame_verts,
-                    emg_values = emg_values_pred[:,i],
-                    cam=frame_cam,
-                    color=mc,
-                    front=False,
-                    mesh_filename=mesh_filename,
-                )
-                imgbackc = np.concatenate([imgout2, imgback2], axis=1)
-                imggt = np.concatenate([imgout, imgout2], axis=1)
-                imgpred = np.concatenate([imgback, imgback2], axis=1)
+            cv2.imwrite(os.path.join(current_path + "/meshimgtruthfront/", str(i).zfill(6) + '.png'), fronttruthimg)
 
-                cv2.imwrite(os.path.join(current_path + "/meshimgsback/", str(i).zfill(6) + '.png'), imgbackc)
-                cv2.imwrite(os.path.join(current_path + "/meshimgstruth/", str(i).zfill(6) + '.png'), imggt)
-                cv2.imwrite(os.path.join(current_path + "/meshimgspred/", str(i).zfill(6) + '.png'), imgpred)
+            frontpredimg = self.renderer.render(
+                img,
+                frame_verts,
+                emg_values = emg_values_pred[:,i],
+                cam=frame_cam,
+                color=mc,
+                front=True,
+                mesh_filename=mesh_filename,
+                pred=True,
+            )
 
-            command = ['ffmpeg', '-framerate', '10', '-i',f'{current_path}/meshimgsfront' +'/%06d.png',  '-c:v', 'libx264','-pix_fmt', 'yuv420p', f'{current_path}/' + 'meshfront.mp4']
-            commandback = ['ffmpeg', '-framerate', '10', '-i',f'{current_path}/meshimgsback' +'/%06d.png',  '-c:v', 'libx264','-pix_fmt', 'yuv420p', f'{current_path}/' + 'meshback.mp4']
-            commandtruth = ['ffmpeg', '-framerate', '10', '-i',f'{current_path}/meshimgstruth' +'/%06d.png',  '-c:v', 'libx264','-pix_fmt', 'yuv420p', f'{current_path}/' + 'meshtruth.mp4']
-            commandpred = ['ffmpeg', '-framerate', '10', '-i',f'{current_path}/meshimgspred' +'/%06d.png',  '-c:v', 'libx264','-pix_fmt', 'yuv420p', f'{current_path}/' + 'meshpred.mp4']
+            cv2.imwrite(os.path.join(current_path + "/meshimgpredfront/", str(i).zfill(6) + '.png'), frontpredimg)
+            frontimg = np.concatenate([fronttruthimg, frontpredimg], axis=1)
+
+            cv2.imwrite(os.path.join(current_path + "/meshimgsfront/", str(i).zfill(6) + '.png'), frontimg)
+
+            backtruth = self.renderer.render(
+                back,
+                frame_verts,
+                emg_values = emg_values[:,i],
+                cam=frame_cam,
+                color=mc,
+                front=False,
+                mesh_filename=mesh_filename,
+                pred=False,
+            )
+
+            backtruthnobkgd = self.renderer.render(
+                np.ones(img.shape),
+                frame_verts,
+                emg_values = emg_values[:,i],
+                cam=frame_cam,
+                color=mc,
+                front=False,
+                mesh_filename=mesh_filename,
+                pred=False,
+            )
+
+            backprednobkgd = self.renderer.render(
+                np.ones(img.shape),
+                frame_verts,
+                emg_values = emg_values[:,i],
+                cam=frame_cam,
+                color=mc,
+                front=False,
+                mesh_filename=mesh_filename,
+                pred=True,
+            )
+
+            cv2.imwrite(os.path.join(current_path + "/meshimgtruthback/", str(i).zfill(6) + '.png'), backtruth)
+
+            backpred = self.renderer.render(
+                back,
+                frame_verts,
+                emg_values = emg_values_pred[:,i],
+                cam=frame_cam,
+                color=mc,
+                front=False,
+                mesh_filename=mesh_filename,
+                pred=True,
+            )
+            cv2.imwrite(os.path.join(current_path + "/meshimgpredback/", str(i).zfill(6) + '.png'), backpred)
+
+            imgback = np.concatenate([backtruth, backpred], axis=1)
+            imggt = np.concatenate([fronttruthimg, backtruth], axis=1)
+            imgpred = np.concatenate([frontpredimg, backpred], axis=1)
+            #imgnobkgd = np.concatenate([fronttruthimgnobkgd, backtruthnobkgd], axis=1)
+
+            cv2.imwrite(os.path.join(current_path + "/meshimgsback/", str(i).zfill(6) + '.png'), imgback)
+            cv2.imwrite(os.path.join(current_path + "/meshimgstruth/", str(i).zfill(6) + '.png'), imggt)
+            cv2.imwrite(os.path.join(current_path + "/meshimgspred/", str(i).zfill(6) + '.png'), imgpred)
+            cv2.imwrite(os.path.join(current_path + "/meshimgsnobkgdfront/", str(i).zfill(6) + '.png'), fronttruthimgnobkgd)
+            cv2.imwrite(os.path.join(current_path + "/meshimgsnobkgdback/", str(i).zfill(6) + '.png'), backtruthnobkgd)
+            cv2.imwrite(os.path.join(current_path + "/meshimgsnobkgdfrontpred/", str(i).zfill(6) + '.png'), frontpredimgnobkgd)
+            cv2.imwrite(os.path.join(current_path + "/meshimgsnobkgdbackpred/", str(i).zfill(6) + '.png'), backprednobkgd)
+
+        command = ['ffmpeg', '-framerate', '10', '-i',f'{current_path}/meshimgsfront' +'/%06d.png',  '-c:v', 'libx264','-pix_fmt', 'yuv420p', f'{current_path}/' + 'meshfront.mp4']
+        commandback = ['ffmpeg', '-framerate', '10', '-i',f'{current_path}/meshimgsback' +'/%06d.png',  '-c:v', 'libx264','-pix_fmt', 'yuv420p', f'{current_path}/' + 'meshback.mp4']
+        commandtruth = ['ffmpeg', '-framerate', '10', '-i',f'{current_path}/meshimgstruth' +'/%06d.png',  '-c:v', 'libx264','-pix_fmt', 'yuv420p', f'{current_path}/' + 'meshtruth.mp4']
+        commandpred = ['ffmpeg', '-framerate', '10', '-i',f'{current_path}/meshimgspred' +'/%06d.png',  '-c:v', 'libx264','-pix_fmt', 'yuv420p', f'{current_path}/' + 'meshpred.mp4']
 
 
-            print(f'Running \"{" ".join(command)}\"')
-            subprocess.call(command)
+        print(f'Running \"{" ".join(command)}\"')
+        subprocess.call(command)
 
-            print(f'Running \"{" ".join(commandtruth)}\"')
-            subprocess.call(commandtruth)
+        print(f'Running \"{" ".join(commandtruth)}\"')
+        subprocess.call(commandtruth)
 
-            print(f'Running \"{" ".join(commandpred)}\"')
-            subprocess.call(commandpred)
+        print(f'Running \"{" ".join(commandpred)}\"')
+        subprocess.call(commandpred)
 
-            print(f'Running \"{" ".join(commandback)}\"')
-            subprocess.call(commandback)
+        print(f'Running \"{" ".join(commandback)}\"')
+        subprocess.call(commandback)
 
 
 
@@ -487,26 +584,23 @@ class MyLogger(logvisgen.Logger):
                     if not os.path.isdir(current_path):
                         os.makedirs(current_path, 0o777)
                     current_path = self.visualize_video(framelist,data_retval['2dskeleton'][j],cur_step,j,phase,framelist[0].split("/")[-2])
-                   # threedskeleton = data_retval['3dskeleton'][j]
-                    #current_path = self.visualize_skeleton(threedskeleton,data_retval['bboxes'][j],data_retval['predcam'][j],cur_step,j,phase,framelist[0].split("/")[-2])
+                    threedskeleton = data_retval['3dskeleton'][j]
+                    current_path = self.visualize_skeleton(threedskeleton,data_retval['bboxes'][j],data_retval['predcam'][j],cur_step,j,phase,framelist[0].split("/")[-2])
                     #pdb.set_trace()
-                    self.visualize_mesh_activation(data_retval['verts'][j],data_retval['orig_cam'][j],framelist, data_retval['emg_values'][j],model_retval['emg_output'][j].cpu().detach(),current_path)
+                    self.visualize_mesh_activation(data_retval['2dskeleton'][j],data_retval['verts'][j],data_retval['orig_cam'][j],framelist, data_retval['emg_values'][j],model_retval['emg_output'][j].cpu().detach(),current_path)
                     
                     if self.classif:
                         values = data_retval['bined_left_quad'][0]-1
                         bins = data_retval['bins'][0]
                         gt_values = torch.index_select(bins.cpu(), 0, values.cpu())
                         pred_values = model_retval['emg_bins'][0].cpu()
-                        
                         self.animate([gt_values.numpy()],[pred_values.detach().numpy()],['left_quad'],'leftleg',2,current_path,epoch)
                     else:
-                        #pdb.set_trace()
                         gtnp = model_retval['emg_gt'].detach().cpu().numpy()
                         prednp = model_retval['emg_output'].detach().cpu().numpy()
                         np.save(current_path + "/gtnp" + str(cur_step) + ".npy",gtnp)
                         np.save(current_path + "/prednp" + str(cur_step) + ".npy",prednp)
-                        rangeofmuscles=['rightquad','rightham','rightbicep','righttricep','leftquad','leftham','leftbicep','lefttricep']
-                        #rangeofmuscles=['rightquad','leftquad']
+                        rangeofmuscles=['RightQuad','RightHamstring','RightBicep','RightTricep','LeftQuad','LeftHamstring','LeftBicep','LeftTricep']
                         """for i in range(model_retval['emg_gt'].shape[1]):
                             gt_values = model_retval['emg_gt'][j,i,:].cpu()*100
                             #gt_values[gt_values>100.0] = 100.0
@@ -523,7 +617,7 @@ class MyLogger(logvisgen.Logger):
                             pred_values = model_retval['emg_output'][j][i].cpu()*100.0
                             #pdb.set_trace()
                             self.animate([gt_values.numpy()],[pred_values.detach().numpy()],[rangeofmuscles[i]],rangeofmuscles[i],2,current_path,epoch)
-                    
+                
 
                     # Print metrics in console.
                     """command = ['ffmpeg', '-i', f'{current_path}/out.mp4', '-i',f'{current_path}/out3dskeleton.mp4',  '-i', f'{current_path}/epoch_206_leftbicep_emg.mp4',

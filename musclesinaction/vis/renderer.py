@@ -27,8 +27,10 @@ import json
 import sys
 from colour import Color
 from PIL import ImageColor
-import matplotlib as mpl
+
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 
 def get_smpl_faces():
     smpl = SMPL('musclesinaction/vibe_data', batch_size=1, create_transl=False)
@@ -102,61 +104,53 @@ class Renderer:
         lv = len(value)
         return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
 
+
     def colorFader(self,mix=0): #fade (linear interpolate) from color c1 (at mix=0) to c2 (mix=1)
-        c1=np.array(mpl.colors.to_rgb('yellow'))
+        c1=np.array([250/255.0,253/255.0,50/255.0])
         c2=np.array(mpl.colors.to_rgb('red'))
         return self.hex_to_rgb(mpl.colors.to_hex((1-mix)*c1 + mix*c2))
 
     def part_segm_to_vertex_colors(self, part_segm, n_vertices, front, emg_values, alpha=1.0, pred=False):
-        vertex_labels = np.zeros(n_vertices)
-        alpha_values = np.zeros(n_vertices)
         vertex_colors = np.ones((n_vertices, 4))
-        red = Color("red")
-        colors = list(red.range_to(Color("grey"),10))
-
+        viridis = mpl.colormaps['autumn_r']
+        norm = mpl.colors.Normalize(vmin=0, vmax=0.5)
+        emg_values = np.array(norm(emg_values.tolist()).tolist())
+        emg_values[emg_values > 1.0]=1.0
+        emg_values = emg_values.tolist()
+        #emg_values = (viridis(norm(emg_values.tolist()))*255).astype('int')
+        #emg_values = self.colorFader(norm(emg_values.tolist()).tolist()[0])
+        
         for part_idx, (k, v) in enumerate(part_segm.items()):
             
             if front:
                 if k == 'rightUpLeg':
-                    alpha_values[v]=0.0 #1-emg_values[1]
-                    vertex_labels[v] = 0
-                    vertex_colors[v] = np.array([0,0,int(emg_values[0]*255),255])
+                    emg_valuesc = self.colorFader(emg_values[0])
+                    vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255]) #np.array([emg_values[0][2],emg_values[0][1],emg_values[0][0], emg_values[0][3]])
                 elif k == 'leftUpLeg':
-                    alpha_values[v]=0.0 #1-emg_values[0]
-                    vertex_labels[v] = 0
-                    vertex_colors[v] = np.array([0,0,int(emg_values[4]*255),255])
+                    emg_valuesc = self.colorFader(emg_values[4])
+                    vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255])
                 elif k == 'leftArm':
-                    alpha_values[v]=0.0 #1-emg_values[5]
-                    vertex_labels[v] = 0
-                    vertex_colors[v] = np.array([0,0,int(emg_values[6]*255),255])
+                    emg_valuesc = self.colorFader(emg_values[6])
+                    vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255])
                 elif k == 'rightArm':
-                    alpha_values[v]=0.0 #1-emg_values[4]
-                    vertex_labels[v] = 0
-                    vertex_colors[v] = np.array([0,0,int(emg_values[2]*255),255])
+                    emg_valuesc = self.colorFader(emg_values[2])
+                    vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255])
                 else:
-                    alpha_values[v] = 1.0
-                    vertex_labels[v] = 4
                     vertex_colors[v] = np.array([150, 150, 150,255])
             else:
                 if k == 'rightUpLeg':
-                    alpha_values[v]=1-emg_values[3]
-                    vertex_labels[v] = 0
-                    vertex_colors[v] = np.array([0,0,int(emg_values[1]*255),255])
-                elif k == 'leftUpLeg':
-                    alpha_values[v]=1-emg_values[2]
-                    vertex_labels[v] = 0
-                    vertex_colors[v] = np.array([0,0,int(emg_values[5]*255),255])
+                    emg_valuesc = self.colorFader(emg_values[1])
+                    vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255])
+                elif k =='leftUpLeg':
+                    emg_valuesc = self.colorFader(emg_values[5])
+                    vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255])
                 elif k == 'leftArm':
-                    alpha_values[v]=1-emg_values[7]
-                    vertex_labels[v] = 0
-                    vertex_colors[v] = np.array([0,0,int(emg_values[7]*255),255])
+                    emg_valuesc = self.colorFader(emg_values[7])
+                    vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255])
                 elif k == 'rightArm':
-                    alpha_values[v]=1-emg_values[6]
-                    vertex_labels[v] = 0
-                    vertex_colors[v] = np.array([0,0,int(emg_values[3]*255),255])
+                    emg_valuesc = self.colorFader(emg_values[6])
+                    vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255])
                 else:
-                    alpha_values[v] = 1
-                    vertex_labels[v] = 4
                     vertex_colors[v] = np.array([150, 150, 150,255])
 
         #vertex_colors = np.ones((n_vertices, 4))
@@ -197,7 +191,7 @@ class Renderer:
         material = pyrender.MetallicRoughnessMaterial(
             metallicFactor=1.0,
             alphaMode='OPAQUE',
-            baseColorFactor=(color[0], color[1], color[2], 0.5)
+            baseColorFactor=(color[0], color[1], color[2], 0.0)
         )
         
         part_segm_filepath = 'musclesinaction/smpl_vert_segmentation.json'
@@ -231,10 +225,10 @@ class Renderer:
         else:
             render_flags = RenderFlags.RGBA
 
-        #if front:
         rgb, _ = self.renderer.render(self.scene, flags=render_flags)
         valid_mask = (rgb[:, :, -1] > 0)[:, :, np.newaxis]
-        output_img = rgb[:, :, :-1] * valid_mask + (1 - valid_mask) * img
+        #img = np.expand_dims(img,axis=2)
+        output_img = rgb[:, :, :-1] * valid_mask + (1 - valid_mask) * img 
         image = output_img.astype(np.uint8)
         #else:
         #    rgb, _ = self.renderer.render(self.scene, flags=render_flags)
