@@ -14,7 +14,7 @@ import collections
 import numpy as np
 import pdb
 import matplotlib.pyplot as plt
-import soundfile as sf
+
 class Logger:
     '''
     Provides generic logging and visualization functionality.

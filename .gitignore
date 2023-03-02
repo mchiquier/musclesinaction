@@ -1,6 +1,9 @@
 # Custom.
 .vscode/settings.json
 checkpoints/
+training_viz_digitized/
+musclesinaction/checkpoints/
+musclesinaction/vibe_data/
 checkpoints_*/
 logs/
 logs_*/

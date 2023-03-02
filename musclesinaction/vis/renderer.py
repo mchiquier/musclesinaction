@@ -30,6 +30,7 @@ from PIL import ImageColor
 
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import matplotlib.cm
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 
 def get_smpl_faces():
@@ -112,7 +113,7 @@ class Renderer:
 
     def part_segm_to_vertex_colors(self, part_segm, n_vertices, front, emg_values, alpha=1.0, pred=False):
         vertex_colors = np.ones((n_vertices, 4))
-        viridis = mpl.colormaps['autumn_r']
+        viridis = matplotlib.cm.get_cmap('autumn_r') #mpl.cm.colormaps['autumn_r']
         norm = mpl.colors.Normalize(vmin=0, vmax=0.5)
         emg_values = np.array(norm(emg_values.tolist()).tolist())
         emg_values[emg_values > 1.0]=1.0
@@ -124,30 +125,30 @@ class Renderer:
             
             if front:
                 if k == 'rightUpLeg':
-                    emg_valuesc = self.colorFader(emg_values[0])
+                    emg_valuesc = self.colorFader(emg_values[4])
                     vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255]) #np.array([emg_values[0][2],emg_values[0][1],emg_values[0][0], emg_values[0][3]])
                 elif k == 'leftUpLeg':
-                    emg_valuesc = self.colorFader(emg_values[4])
+                    emg_valuesc = self.colorFader(emg_values[0])
                     vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255])
                 elif k == 'leftArm':
-                    emg_valuesc = self.colorFader(emg_values[6])
+                    emg_valuesc = self.colorFader(emg_values[3])
                     vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255])
                 elif k == 'rightArm':
-                    emg_valuesc = self.colorFader(emg_values[2])
+                    emg_valuesc = self.colorFader(emg_values[7])
                     vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255])
                 else:
                     vertex_colors[v] = np.array([150, 150, 150,255])
             else:
                 if k == 'rightUpLeg':
-                    emg_valuesc = self.colorFader(emg_values[1])
-                    vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255])
-                elif k =='leftUpLeg':
                     emg_valuesc = self.colorFader(emg_values[5])
                     vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255])
-                elif k == 'leftArm':
-                    emg_valuesc = self.colorFader(emg_values[7])
+                elif k =='leftUpLeg':
+                    emg_valuesc = self.colorFader(emg_values[1])
                     vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255])
-                elif k == 'rightArm':
+                elif k == 'leftShoulder':
+                    emg_valuesc = self.colorFader(emg_values[2])
+                    vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255])
+                elif k == 'rightShoulder':
                     emg_valuesc = self.colorFader(emg_values[6])
                     vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255])
                 else:

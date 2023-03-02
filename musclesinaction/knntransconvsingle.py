@@ -3,7 +3,7 @@ import pdb
 import torch
 import musclesinaction.configs.args as args
 import vis.logvis as logvis
-import musclesinaction.dataloader.data as data
+import musclesinaction.dataloader.data2 as data2
 import time
 import os
 import random
@@ -144,7 +144,7 @@ def main(args, logger):
     #    'device': args.device}
     #my_model = convmodel.BasicConv(**model_args)
     my_model = model.TransformerEnc(**model_args)
-    args.resume = 'checkpoints/oct24transffinalconv_all_step25' + '/model_250.pth'
+    #args.resume = 'checkpoints/final_sruthi15_finetune' + '/model_656.pth'
     checkpoint = torch.load(args.resume, map_location='cpu')
     my_model.load_state_dict(checkpoint['my_model'])
     my_model.eval()
@@ -155,13 +155,13 @@ def main(args, logger):
     logger.info('Initializing data loaders...')
     start_time = time.time()
     (train_loader, train_loader_noshuffle, val_aug_loader, val_noaug_loader, dset_args) = \
-        data.create_train_val_data_loaders(args, logger)
+        data2.create_train_val_data_loaders(args, logger)
 
     list_of_resultsnn = []
     list_of_results = []
     list_of_resultsnn = []
     (train_loader, train_loader_noshuffle, val_aug_loader, val_noaug_loader, dset_args) = \
-    data.create_train_val_data_loaders(args, logger)
+    data2.create_train_val_data_loaders(args, logger)
 
     list_of_train_emg = []
     list_of_train_skeleton = []
@@ -256,17 +256,31 @@ def main(args, logger):
         
         np_val_emg_cur = np.array(list_of_val_emg_cur)
         np_pred_emg_cur = np.array(list_of_pred_emg_cur)
-        msel = torch.nn.MSELoss()
-        print(msel(torch.tensor(np_val_emg_cur)*100,torch.tensor(np_pred_emg_cur)*100),trainpath)
+        msel = torch.nn.MSELoss(reduction='none')
+        #pdb.set_trace()
+        value = msel(torch.tensor(np_val_emg_cur[:,:,:,:])*100,torch.tensor(np_pred_emg_cur[:,:,:,:])*100)
+        sqrtvalue = torch.sqrt(value).detach().numpy()
+        percentval = 0.2
+        absval = 10
+        percent = np_val_emg_cur*100*percentval
+        goodcount = np.count_nonzero(sqrtvalue<percent)
+        total = sqrtvalue.reshape(-1).shape[0]
+        goodcountabs = np.count_nonzero(sqrtvalue < absval)
+        pdb.set_trace()
+        print(goodcount, goodcountabs, total, goodcount*100/total, goodcountabs*100/total, trainpath)
+        
+        for i in range(np_val_emg_cur.shape[2]):
+            print(msel(torch.tensor(np_val_emg_cur[:,:,i,:])*100,torch.tensor(np_pred_emg_cur[:,:,i,:])*100),trainpath)
                     #list_of_val_skeleton.append(twodkpts.reshape(-1).numpy())
-
+    pdb.set_trace()
     np_val_emg = np.array(list_of_val_emg)
     #np_train_emg = np.array(list_of_train_emg)
     #np_val_skeleton = np.array(list_of_val_skeleton)
     #np_train_skeleton = np.array(list_of_train_skeleton)
     np_pred_emg = np.array(list_of_pred_emg)
     msel = torch.nn.MSELoss()
-    print(msel(torch.tensor(np_pred_emg)*100,torch.tensor(np_val_emg)*100),trainpath)
+    for i in range(np_pred_emg.shape[2]):
+        print(msel(torch.tensor(np_pred_emg[:,:,i,:])*100,torch.tensor(np_val_emg[:,:,i,:])*100),trainpath)
     #nn = NearestNeighbor()
     #nn.train(np_train_skeleton,np_train_emg)
     #ypred = nn.predict(np_val_skeleton)

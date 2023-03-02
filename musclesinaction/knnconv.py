@@ -3,7 +3,7 @@ import pdb
 import torch
 import musclesinaction.configs.args as args
 import vis.logvis as logvis
-import musclesinaction.dataloader.data as data
+import musclesinaction.dataloader.data2 as data2
 import time
 import os
 import random
@@ -160,20 +160,21 @@ def main(args, logger):
         'device': args.device}
     my_model = convmodel.BasicConv(**model_args)
     #my_model = transmodel.TransformerEnc(**model_args)
-    #checkpoint = torch.load(args.resume, map_location='cpu')
-    #my_model.load_state_dict(checkpoint['my_model'])
-    #my_model.eval()
+    args.resume = 'checkpoints/oct24new_all/model_150.pth' 
+    checkpoint = torch.load(args.resume, map_location='cpu')
+    my_model.load_state_dict(checkpoint['my_model'])
+    my_model.eval()
     # Instantiate datasets.
     logger.info('Initializing data loaders...')
     start_time = time.time()
     (train_loader, train_loader_noshuffle, val_aug_loader, val_noaug_loader, dset_args) = \
-        data.create_train_val_data_loaders(args, logger)
+        data2.create_train_val_data_loaders(args, logger)
 
     list_of_resultsnn = []
     list_of_results = []
     list_of_resultsnn = []
     (train_loader, train_loader_noshuffle, val_aug_loader, val_noaug_loader, dset_args) = \
-    data.create_train_val_data_loaders(args, logger)
+    data2.create_train_val_data_loaders(args, logger)
 
     list_of_train_emg = []
     list_of_train_skeleton = []
@@ -222,10 +223,17 @@ def main(args, logger):
         trainpath= args.data_path_train #= trainpath
         ignoremovie = trainpath
         ignoremovie = ignoremovie.split("/")[-1].split(".txt")[0].split("_")[2]
-        args.resume = 'checkpoints/oct24new_' +ignoremovie + '/model_200.pth'
-        checkpoint = torch.load(args.resume, map_location='cpu')
+        #args.resume = 'checkpoints/oct24new_' +ignoremovie + '/model_200.pth'
+        #checkpoint = torch.load(args.resume, map_location='cpu')
         my_model.load_state_dict(checkpoint['my_model'])
         my_model.eval()
+        list_of_train_emg = []
+        list_of_train_skeleton = []
+        list_of_val_emg = []
+        list_of_val_skeleton = []
+        list_of_pred_emg = []
+        list_of_pred_emg_notleft = []
+        list_of_val_emg_notleft = []
         
 
         for cur_step, data_retval in enumerate(tqdm.tqdm(val_aug_loader)):
@@ -272,13 +280,23 @@ def main(args, logger):
                     list_of_pred_emg_notleft.append(emg_output[:,:,0,:].detach().numpy())
                     list_of_val_emg_notleft.append(emggroundtruth.numpy())
                     
-    np_val_emg = np.array(list_of_val_emg)
-    #np_train_emg = np.array(list_of_train_emg)
-    #np_val_skeleton = np.array(list_of_val_skeleton)
-    #np_train_skeleton = np.array(list_of_train_skeleton)
-    np_pred_emg = np.array(list_of_pred_emg)
-    msel = torch.nn.MSELoss()
-    print(msel(torch.tensor(np_pred_emg)*100,torch.tensor(np_val_emg)*100),trainpath)
+        np_val_emg = np.array(list_of_val_emg)
+        #np_train_emg = np.array(list_of_train_emg)
+        #np_val_skeleton = np.array(list_of_val_skeleton)
+        #np_train_skeleton = np.array(list_of_train_skeleton)
+        np_pred_emg = np.array(list_of_pred_emg)
+        msel = torch.nn.MSELoss(reduction='none')
+        value = msel(torch.tensor(np_val_emg[:,:,:,:])*100,torch.tensor(np_pred_emg[:,:,:,:])*100)
+        sqrtvalue = torch.sqrt(value).detach().numpy()
+        percentval = 0.2
+        absval = 10
+        percent = np_val_emg*100*percentval
+        goodcount = np.count_nonzero(sqrtvalue<percent)
+        total = sqrtvalue.reshape(-1).shape[0]
+        goodcountabs = np.count_nonzero(sqrtvalue < absval)
+        pdb.set_trace()
+        print(goodcount, goodcountabs, total, goodcount*100/total, goodcountabs*100/total, trainpath)
+    #print(msel(torch.tensor(np_pred_emg)*100,torch.tensor(np_val_emg)*100),trainpath)
 
     np_val_emg_notleft = np.array(list_of_val_emg_notleft)
     #np_train_emg = np.array(list_of_train_emg)

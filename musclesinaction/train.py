@@ -12,7 +12,8 @@ import time
 import tqdm
 from pathlib import Path
 import pdb
-import musclesinaction.models.model as transmodel
+import musclesinaction.models.modelemgtopose as transmodelemgtopose
+import musclesinaction.models.model as transmodelposetoemg
 import musclesinaction.models.modelbert as transmodelbert
 import musclesinaction.models.basicconv as convmodel
 
@@ -30,7 +31,7 @@ def _get_learning_rate(optimizer):
 
 
 def _train_one_epoch(args, train_pipeline, phase, epoch, optimizer,
-                     lr_scheduler, train_data_loader, val_data_loader,device, logger):
+                     lr_scheduler, train_data_loader, val_data_loader,val_ood_loader, device, logger):
     #assert phase in ['train', 'val', 'val_aug', 'val_noaug']
 
     log_str = f'Epoch (1-based): {epoch + 1} / {args.num_epochs}'
@@ -53,36 +54,34 @@ def _train_one_epoch(args, train_pipeline, phase, epoch, optimizer,
     num_exceptions = 0
     if phase == 'train':
         data_loader = train_data_loader
+    elif phase == 'evalood':
+        data_loader = val_ood_loader
     else:
         data_loader = val_data_loader
-        
+    
+    print(len(data_loader),"here")
     for cur_step, data_retval in enumerate(tqdm.tqdm(data_loader)):
+        
 
         if cur_step == 0:
             logger.info(f'Enter first data loader iteration took {time.time() - start_time:.3f}s')
 
         total_step = cur_step + total_step_base  # For continuity in wandb.
 
-        try:
+
             # First, address every example independently.
             # This part has zero interaction between any pair of GPUs.
-            (model_retval, loss_retval) = train_pipeline[0](data_retval, cur_step, total_step)
-            # Second, process accumulated information, for example contrastive loss functionality.
-            # This part typically happens on the first GPU, so it should be kept minimal in memory.
-            #ignoremovie = args.data_path_train
-            #ignoremovie = ignoremovie.split("/")[-1].split(".txt")[0].split("_")[2]
-            ignoremovie = None
-            loss_retval = train_pipeline[1].process_entire_batch(
-                data_retval, model_retval, loss_retval, ignoremovie, cur_step, total_step)
-            total_loss = loss_retval['total']
+        (model_retval, loss_retval) = train_pipeline[0](data_retval, cur_step, total_step)
+        # Second, process accumulated information, for example contrastive loss functionality.
+        # This part typically happens on the first GPU, so it should be kept minimal in memory.
+        #ignoremovie = args.data_path_train
+        #ignoremovie = ignoremovie.split("/")[-1].split(".txt")[0].split("_")[2]
+        ignoremovie = None
+        loss_retval = train_pipeline[1].process_entire_batch(
+            data_retval, model_retval, loss_retval, ignoremovie, cur_step, total_step)
+        total_loss = loss_retval['total']
+        #print(total_loss)
 
-        except Exception as e:
-            num_exceptions += 1
-            if num_exceptions >= 7:
-                raise e
-            else:
-                logger.exception(e)
-                continue
 
         # Perform backpropagation to update model parameters.
         if phase == 'train':
@@ -100,10 +99,10 @@ def _train_one_epoch(args, train_pipeline, phase, epoch, optimizer,
         """if phase == 'eval':
             logger.handle_train_step(epoch, phase, cur_step, total_step, steps_per_epoch,
                            data_retval, model_retval, loss_retval)"""
-        if phase=='val':
+        """if phase=='val':
             #pdb.set_trace()
             logger.handle_val_step(epoch, phase, cur_step, total_step, steps_per_epoch,
-                        data_retval, model_retval, loss_retval)
+                        data_retval, model_retval, loss_retval)"""
         #print("here")
         # DEBUG:
         if cur_step >= 256 and 'dbg' in args.name:
@@ -112,37 +111,45 @@ def _train_one_epoch(args, train_pipeline, phase, epoch, optimizer,
 
     if phase == 'train':
         lr_scheduler.step()
+    return loss_retval
+    
 
 
 def _train_all_epochs(args, train_pipeline, optimizer, lr_scheduler, start_epoch, train_loader, train_loader_noshuffle,
-                      val_aug_loader, val_noaug_loader, device, logger, checkpoint_fn):
+                      val_aug_loader, val_ood_loader, device, logger, checkpoint_fn):
 
     logger.info('Start training loop...')
     start_time = time.time()
     list_of_val_vals = []
+    preval = 100000000
     for epoch in range(start_epoch, args.num_epochs):
 
         # Training.
-        """_train_one_epoch(
+        _ = _train_one_epoch(
             args, train_pipeline, 'train', epoch, optimizer,
-            lr_scheduler, train_loader, val_aug_loader, device, logger)"""
+            lr_scheduler, train_loader, train_loader, train_loader, device, logger)
         
-        """_train_one_epoch(
+        loss_retval = _train_one_epoch(
             args, train_pipeline, 'eval', epoch, optimizer,
-            lr_scheduler, train_loader_noshuffle, train_loader_noshuffle, device, logger)"""
-
+            lr_scheduler, val_aug_loader, val_aug_loader, val_ood_loader,device, logger)
+        
         # Save model weights.
-        if epoch%1==0 and args.name != 'dbg':
+        returnval = logger.epoch_finished(epoch)
+        checkpointcheck = loss_retval['total'].item()
+        if checkpointcheck < preval:
             checkpoint_fn(epoch)
+            preval = checkpointcheck
+        if epoch%50==0:
+            checkpoint_fn(epoch,flag="epoch")
 
         # Validation with data augmentation. 
 
-        _train_one_epoch(
+        """_train_one_epoch(
             args, train_pipeline, 'val', epoch, optimizer,
-            lr_scheduler, train_loader, val_aug_loader, device, logger)
+            lr_scheduler, train_loader, val_aug_loader, device, logger)"""
 
         #pdb.set_trace()
-        returnval = logger.epoch_finished(epoch)
+        
 
         """Early stopping
         returnval = logger.epoch_finished(epoch)
@@ -182,7 +189,7 @@ def main(args, logger):
     # Instantiate datasets.
     logger.info('Initializing data loaders...')
     start_time = time.time()
-    (train_loader, train_loader_noshuffle, val_aug_loader, val_noaug_loader, dset_args) = \
+    (train_loader, train_loader_noshuffle, val_aug_loader, val_ood_loader, dset_args) = \
         data.create_train_val_data_loaders(args, logger)
     logger.info(f'Took {time.time() - start_time:.3f}s')
 
@@ -193,7 +200,8 @@ def main(args, logger):
    
 
     if args.modelname == 'transf':
-        model_args = {'num_tokens': int(args.num_tokens),
+        model_args = {'threed': args.threed,
+            'num_tokens': int(args.num_tokens),
         'dim_model': int(args.dim_model),
         'num_classes': int(args.num_classes),
         'num_heads': int(args.num_heads),
@@ -204,7 +212,10 @@ def main(args, logger):
         'device': args.device,
         'embedding': args.embedding,
         'step': int(args.step)}
-        model = transmodel.TransformerEnc(**model_args)
+        if args.predemg == 'True':
+            model = transmodelposetoemg.TransformerEnc(**model_args)
+        else:
+            model = transmodelemgtopose.TransformerEnc(**model_args)
     elif args.modelname == 'old':
         model_args = {
         'device': args.device}
@@ -249,23 +260,38 @@ def main(args, logger):
     logger.info(f'Took {time.time() - start_time:.3f}s')
 
     # Define logic for how to store checkpoints.
-    def save_model_checkpoint(epoch):
-        if args.checkpoint_path:
-            logger.info(f'Saving model checkpoint to {args.checkpoint_path}...')
-            checkpoint = {
-                'optimizer': optimizer.state_dict(),
-                'lr_scheduler': lr_scheduler.state_dict(),
-                'epoch': epoch,
-                'train_args': args,
-                'dset_args': dset_args,
-                'model_args': model_args,
-            }
-            checkpoint['my_model'] = networks_nodp[0].state_dict()
-            torch.save(checkpoint,
-                       os.path.join(args.checkpoint_path, 'model_{}.pth'.format(epoch)))
-            torch.save(checkpoint,
-                       os.path.join(args.checkpoint_path, 'checkpoint.pth'))
-            logger.info()
+
+    def save_model_checkpoint(epoch, flag="latest"):
+        
+        if flag=="latest":
+            if args.checkpoint_path:
+                logger.info(f'Saving model checkpoint to {args.checkpoint_path}...')
+                checkpoint = {
+                    'optimizer': optimizer.state_dict(),
+                    'lr_scheduler': lr_scheduler.state_dict(),
+                    'epoch': epoch,
+                    'train_args': args,
+                    'dset_args': dset_args,
+                    'model_args': model_args,
+                }
+                checkpoint['my_model'] = networks_nodp[0].state_dict()
+                torch.save(checkpoint,
+                        os.path.join(args.checkpoint_path, 'latestcheckpoint.pth'))
+                logger.info()
+        else:
+            if args.checkpoint_path:
+                logger.info(f'Saving model checkpoint to {args.checkpoint_path}...')
+                checkpoint = {
+                    'optimizer': optimizer.state_dict(),
+                    'lr_scheduler': lr_scheduler.state_dict(),
+                    'epoch': epoch,
+                    'train_args': args,
+                    'dset_args': dset_args,
+                    'model_args': model_args,
+                }
+                checkpoint['my_model'] = networks_nodp[0].state_dict()
+                torch.save(checkpoint,
+                        os.path.join(args.checkpoint_path, 'model_{}.pth'.format(epoch)))
 
     if 1:
         # if 'dbg' not in args.name:
@@ -279,7 +305,7 @@ def main(args, logger):
     # Start training loop.
     _train_all_epochs(
         args, (train_pipeline, train_pipeline_nodp), optimizer, lr_scheduler, start_epoch,
-        train_loader, train_loader_noshuffle, val_aug_loader, val_noaug_loader, device, logger, save_model_checkpoint)
+        train_loader, train_loader_noshuffle, val_aug_loader, val_ood_loader, device, logger, save_model_checkpoint)
 
 
 if __name__ == '__main__':

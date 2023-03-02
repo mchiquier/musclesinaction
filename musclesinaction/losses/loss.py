@@ -87,11 +87,11 @@ class MyLosses():
 
         for (k, v) in loss_retval.items():
             if torch.is_tensor(v):
-                if k == 'cross_ent':
-                    loss_retval[k] = torch.mean(v)
+                loss_retval[k] = torch.mean(v)
 
         # Obtain total loss. 
         loss_total = loss_retval['cross_ent'] #* self.l1_lw
+        bad_loss = loss_retval['bad_loss']
         #video = data_retval['frame_paths'][0][0].split("/")[-2]
         
         # Convert loss terms (just not the total) to floats for logging.
@@ -100,13 +100,16 @@ class MyLosses():
                 loss_retval[k] = v.item()
 
         # Report all loss values.
-        if self.phase != 'eval':
+        
             """for moviename in sorted(set(list_of_movienames)):
                 if ignoremovie in moviename:
                     self.logger.report_scalar(
                     self.phase + '/loss_total_' + moviename, loss_retval[moviename], step=total_step)"""
-            self.logger.report_scalar(
-                self.phase + '/loss_total', loss_total.item(), step=total_step)
+        self.logger.report_scalar(
+            self.phase + '/loss_total', loss_total.item(), step=total_step)
+        self.logger.report_scalar(
+            self.phase + '/loss_badcond', bad_loss.item(), step=total_step)
+        if self.train_args.predemg == 'True':
             for i in range(model_retval['emg_gt'].shape[1]):
                 self.logger.report_scalar(
                     self.phase + '/emggt' + str(i), torch.mean(model_retval['emg_gt'][:,i,:]).item(), step=total_step,remember=False,commit_histogram=True)

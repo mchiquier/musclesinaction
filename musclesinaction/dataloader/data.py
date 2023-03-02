@@ -63,7 +63,9 @@ def create_train_val_data_loaders(args, logger):
     #my_transform = augs.get_train_transform(args.image_dim)
     dset_args = dict()
     dset_args['percent'] = args.percent
+    dset_args['std'] = args.std
     dset_args['step'] = int(args.step)
+    dset_args['cond'] = args.cond
     #dset_args['transform'] = my_transform
 
     train_dataset = MyMuscleDataset(
@@ -78,18 +80,39 @@ def create_train_val_data_loaders(args, logger):
     val_aug_dataset, batch_size=args.bs, num_workers=args.num_workers,
     shuffle=True, worker_init_fn=_seed_worker, drop_last=True, pin_memory=False)
 
+
     #first = int(len(dataset)*0.8)
     #second = len(dataset) - first
     #train_dataset, val_aug_dataset = torch.utils.data.random_split(dataset, [first, second])
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.bs, num_workers=args.num_workers,
         shuffle=True, worker_init_fn=_seed_worker, drop_last=True, pin_memory=False)
-    train_loader_noshuffle = torch.utils.data.DataLoader(
-        train_dataset, batch_size=args.bs, num_workers=args.num_workers,
-        shuffle=False, worker_init_fn=_seed_worker, drop_last=True, pin_memory=False)
+       
+    return (train_loader, train_loader, val_aug_loader, val_aug_loader, dset_args)
+
+def create_val_data_loaders(args, logger):
+    '''
+    return (train_loader, val_aug_loader, val_noaug_loader, dset_args).
+    '''
+
+    # TODO: Figure out noaug val dataset args as well.
+    #my_transform = augs.get_train_transform(args.image_dim)
+    dset_args = dict()
+    dset_args['percent'] = args.percent
+    dset_args['std'] = args.std
+    dset_args['step'] = int(args.step)
+    dset_args['cond'] = args.cond
+    #dset_args['transform'] = my_transform
+    #validations = os.listdir(args.data_path_val)
     
-   
-    return (train_loader, train_loader_noshuffle, val_aug_loader, val_aug_loader, dset_args)
+    
+    val_aug_dataset = MyMuscleDataset(
+        args.data_path_val, logger, 'val', **dset_args)
+    val_aug_loader = torch.utils.data.DataLoader(
+    val_aug_dataset, batch_size=args.bs, num_workers=args.num_workers,
+    shuffle=True, worker_init_fn=_seed_worker, drop_last=True, pin_memory=False)
+       
+    return (val_aug_loader, val_aug_loader, val_aug_loader, val_aug_loader, dset_args)
 
 
 def create_test_data_loader(train_args, test_args, train_dset_args, logger):
@@ -118,7 +141,7 @@ class MyMuscleDataset(torch.utils.data.Dataset):
     dataset.
     '''
 
-    def __init__(self, dataset_root, logger, phase, percent,  step,transform=None):
+    def __init__(self, dataset_root, logger, phase, percent,  step, std, cond, transform=None):
         '''
         :param dataset_root (str): Path to dataset (with or without phase).
         :param logger (MyLogger).
@@ -146,10 +169,12 @@ class MyMuscleDataset(torch.utils.data.Dataset):
             self.dset_size = file_count
             self.file_count = file_count
 
+        self.std = std
         self.dataset_root = dataset_root
         self.logger = logger
         self.phase = phase
         self.phase_dir = phase_dir
+        self.cond = cond
         self.transform = transform
         self.percent = float(percent)
         self.step = int(step)
@@ -158,35 +183,7 @@ class MyMuscleDataset(torch.utils.data.Dataset):
         self.log_dir = 'training_viz_digitized'
         self.plot = False
         self.muscles=['rightquad','leftquad','rightham','leftham','rightglutt','leftglutt','leftbicep','rightbicep']
-        """self.videos = ['IMG_2419_30.MOV','IMG_2420_30.MOV','IMG_2422_30.MOV', 'IMG_2404_30.MOV',
-        'IMG_2426_30.MOV','IMG_2405_30.MOV','IMG_2409_30.MOV','IMG_2410_30.MOV','IMG_2413_30.MOV','IMG_2424_30.MOV','IMG_2415_30.MOV','IMG_2406_30.MOV',
-        'IMG_2407_30.MOV','IMG_2408_30.MOV','IMG_2416_30.MOV','IMG_2423_30.MOV',
-        'IMG_2425_30.MOV','IMG_2096_30.MOV','IMG_2097_30.MOV','IMG_2099_30.MOV','IMG_2100_30.MOV','IMG_2101_30.MOV',
-        'IMG_2104_30.MOV','IMG_2105_30.MOV','IMG_2108_30.MOV','IMG_2109_30.MOV','IMG_2110_30.MOV',
-        'IMG_2111_30.MOV','IMG_2112_30.MOV','IMG_2125_30.MOV','IMG_2129_30.MOV','IMG_2098_30.MOV',
-        'IMG_2103_30.MOV','IMG_2107_30.MOV','IMG_2113_30.MOV','IMG_2126_30.MOV','IMG_2131_30.MOV',
-        ]"""
-        #self.videos = ['IMG_squatright_30.MOV', 'IMG_squatwrong_30.MOV']
-        #self.videos = ['IMG_2403_30.MOV','IMG_2411_30.MOV','IMG_2412_30.MOV', 'IMG_2414_30.MOV',
-        #'IMG_2415_30.MOV']
-        self.videos = ['IMG_2096_30.MOV','IMG_2097_30.MOV','IMG_2099_30.MOV','IMG_2100_30.MOV','IMG_2101_30.MOV',
-        'IMG_2104_30.MOV','IMG_2105_30.MOV','IMG_2108_30.MOV','IMG_2109_30.MOV','IMG_2110_30.MOV',
-        'IMG_2111_30.MOV','IMG_2112_30.MOV','IMG_2125_30.MOV','IMG_2129_30.MOV','IMG_2098_30.MOV',
-        'IMG_2103_30.MOV','IMG_2107_30.MOV','IMG_2113_30.MOV','IMG_2126_30.MOV','IMG_2131_30.MOV']
-        """self.videos = ['IMG_2419_30.MOV','IMG_2420_30.MOV','IMG_2422_30.MOV', 'IMG_2404_30.MOV',
-        'IMG_2426_30.MOV','IMG_2405_30.MOV','IMG_2409_30.MOV','IMG_2410_30.MOV',
-        'IMG_2411_30.MOV','IMG_2412_30.MOV','IMG_2403_30.MOV','IMG_2413_30.MOV',
-        'IMG_2414_30.MOV','IMG_2424_30.MOV','IMG_2415_30.MOV','IMG_2406_30.MOV',
-        'IMG_2407_30.MOV','IMG_2408_30.MOV','IMG_2416_30.MOV','IMG_2423_30.MOV',
-        'IMG_2425_30.MOV'] """
-        """self.videos = ['IMG_2478_30.MOV','IMG_2479_30.MOV','IMG_2480_30.MOV',
-        'IMG_2487_30.MOV','IMG_2488_30.MOV','IMG_2489_30.MOV','IMG_2490_30.MOV',
-        'IMG_2471_30.MOV','IMG_2472_30.MOV','IMG_2473_30.MOV','IMG_2474_30.MOV',
-        'IMG_2483_30.MOV','IMG_2484_30.MOV','IMG_2485_30.MOV','IMG_2486_30.MOV']"""
-        self.pickledict = {}
-        for elem in self.videos:
-            self.pickledict[elem.split("_")[1]] = joblib.load('../../../vondrick/mia/VIBE/' + 'output/' + elem + '/vibe_output.pkl')#filepath[1]) 
-        #self.pathtopklone = '../../../vondrick/mia/VIBE/' + 'output/IMG_1196_30.MOV/vibe_output.pkl'#filepath[1]
+
         #self.pathtopkltwo = '../../../vondrick/mia/VIBE/' + 'output/IMG_1197_30.MOV/vibe_output.pkl'#filepath[1]
         #self.pathtopkthree = '../../../vondrick/mia/VIBE/' + 'output/IMG_1203_30.MOV/vibe_output.pkl'#filepath[1]
         #self.pathtopkfour = '../../../vondrick/mia/VIBE/' + 'output/IMG_1902_30.MOV/vibe_output.pkl'#filepath[1]
@@ -211,7 +208,7 @@ class MyMuscleDataset(torch.utils.data.Dataset):
         self.totaleleven = joblib.load(self.pathtopkeleven)"""
 
     def __len__(self):
-        return int((self.dset_size-30)*self.percent)
+        return int((self.dset_size)*self.percent)
 
     def animate(self, list_of_data, labels, part, trialnum, current_path):
     
@@ -251,14 +248,11 @@ class MyMuscleDataset(torch.utils.data.Dataset):
         cur = time.time()
         os.makedirs(current_path, 0o777, exist_ok=True)
         file_idx = index
-        filepath = self.all_files[file_idx].split(",")
-        cur2 = time.time()
-        #print(cur2-cur, "1")
-        cur = cur2
-        
-        pathtoframes = '../../../vondrick/mia/VIBE/' + filepath[0]
-        #print(filepath[0],filepath[1])
-        
+        filepath = self.all_files[index]
+        emgvalues = np.load(filepath + "/emgvaluesstd.npy")
+        twodjoints = np.load(filepath + "/2djoints.npy")
+        threedjoints = np.load(filepath + "/3djoints.npy")
+ 
         cur2 = time.time()
         #print(cur2-cur, "2")
         cur = cur2
@@ -300,7 +294,7 @@ class MyMuscleDataset(torch.utils.data.Dataset):
             list_of_emg_values_righttricep.append(float(emgvalues[6]))
             list_of_emg_values_lefttricep.append(float(emgvalues[7]))
 
-            total = self.pickledict[pathtoframes.split("/")[-1].split("_")[1]]
+            total = self.pickledict[pathtoframes.split("/")[-3] + "/" +pathtoframes.split("/")[-2]]
             
             """if '1197' in pathtoframes:
                 total = self.totaltwo
@@ -383,47 +377,119 @@ class MyMuscleDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         
-        cur = time.time()
-        (list_of_emg_values, twod_joints, list_of_threed_joints, list_of_frame_paths, list_of_bboxes, list_of_predcam,
-        list_of_orig_cam, list_of_verts) = self.visualize_video(index)
-        cur2 = time.time()
-        #print(cur2-cur,"0")
-        cur = cur2
-        #list_of_frames=np.array(list_of_frames)
-        twod_joints=np.array(twod_joints)
-        bboxes = np.array(list_of_bboxes)
-        predcam = np.array(list_of_predcam)
-        threed_joints=np.array(list_of_threed_joints)
-        #twod_joints = twod_joints.reshape(twod_joints.shape[0],-1)
-        emg_values_right_quad = np.array(list_of_emg_values)[0]
-        bined_right_quad = np.digitize(emg_values_right_quad,self.bins)
-        emg_values_left_quad = np.array(list_of_emg_values)[0]
-        bined_left_quad = np.digitize(emg_values_left_quad,self.bins)
-
-        # Return results.
-        cur2 = time.time()
-        #print(cur2-cur,"1")
-        name = list_of_frame_paths[0].split("/")[-2].split("_")[1]
-        if name[2] == '4':
-            cond = np.array([0.0]) 
+        filepath = self.all_files[index].split("\n")[0]
+        if self.std == "True":
+            emg_values = np.load("../../../vondrick/mia/VIBE/" + filepath + "/emgvaluesstd.npy")
         else:
-            cond = np.array([1.0])
+            emg_values = np.load("../../../vondrick/mia/VIBE/" + filepath + "/emgvalues.npy")
+        twod_joints = np.load("../../../vondrick/mia/VIBE/" + filepath + "/joints2d.npy")
+        threed_joints = np.load("../../../vondrick/mia/VIBE/" + filepath + "/joints3d.npy")
+        predcam = np.load("../../../vondrick/mia/VIBE/" + filepath + "/predcam.npy")
+        bboxes = np.load("../../../vondrick/mia/VIBE/" + filepath + "/bboxes.npy")
+
+        file = open("../../../vondrick/mia/VIBE/" + filepath + "/frame_paths.txt", 'r')
+        line = file.readlines()[0]
+        frame_paths = line.rstrip().split(',')
+            
+        #print(cur2-cur,"0")
+
+
+
+        #list_of_frames=np.array(list_of_frames)
+        person = filepath.split("/")[2]
+        if self.cond=='True':
+            if person == 'David':
+                #condval = torch.tensor([0]).to(torch.int64) #.to(self.device)
+                condval = np.array([1.0])
+                condvalbad = np.array([0.1])
+                #mean = np.array([20.477754532775453,22.77594142259414,8.943654114365412,10.712970711297071,25.561506276150627,31.569735006973502,10.12510460251046,8.890306834030683,])
+                #std = np.array([9.843984859529295,7.8700795426556445,2.184267197160608,4.016428843990136,13.291629562251334,10.801735697194195,2.4458652432669696,3.6610053859341303])
+            #condvalbad = torch.tensor([1]).to(torch.int64)
+            elif person == 'Ishaan':
+                #condval = torch.tensor([1]).to(torch.int64)
+                #condvalbad = torch.tensor([2]).to(torch.int64)
+                condval = np.array([0.9]) #np.array([0.9]) #np.array([0.6])
+                condvalbad = np.array([0.3])
+                #mean = np.array([12.693347193347194,9.420859320859321,15.787179487179488,24.37186417186417,7.33083853083853,8.572765072765073,24.766389466389466,28.63139293139293,])
+                #std = np.array([5.0676918939207605,4.278709410152058,8.025951618999134,16.31777423074967,4.699630460205841,4.770252420447796,15.780496877387819,19.274093253782787])
+            elif person == "Jo":
+                #condval = torch.tensor([2]).to(torch.int64)
+                #condvalbad = torch.tensor([3]).to(torch.int64)
+                condval = np.array([0.8]) #np.array([0.9]) #np.array([0.3])
+                condvalbad = np.array([0.6])
+                #mean= np.array([5.376230661040788,8.166526019690577,27.226019690576653,31.612869198312236,14.103867791842475,13.167158931082982,22.12011251758087,20.867088607594937])
+                #std = np.array([3.651494944259142,5.772440868944948,16.608860878596072,22.613865413206977,4.348816765789181,6.718509726195761,10.779130379832406,13.83257533754815])
+            elif person == "Jonny":
+                condval = np.array([0.7])
+                condvalbad = np.array([0.6]) 
+            elif person == "Lionel":
+                condval = np.array([0.6])
+                condvalbad = np.array([0.1]) 
+            elif person == "Me":
+                condval = np.array([0.5])
+                condvalbad = np.array([0.6]) 
+            elif person == "Samir":
+                condval = np.array([0.4])
+                condvalbad = np.array([0.6]) 
+            elif person == "Serena":
+                condval = np.array([0.3])
+                condvalbad = np.array([0.6]) 
+            elif person == "Sonia":
+                condval = np.array([0.2])
+                condvalbad = np.array([0.6]) 
+            else:
+                #condval = torch.tensor([3]).to(torch.int64)
+                #condvalbad = torch.tensor([0]).to(torch.int64)
+                condval = np.array([0.1]) #np.array([0.9]) #np.array([0.1])
+                condvalbad = np.array([0.9]) #np.array([0.9])
+                #mean = np.array([18.297543859649124,23.576771929824563,9.026315789473685,10.502315789473684,22.304070175438596,27.723438596491228,16.91621052631579,8.84280701754386])
+                #std = np.array([14.925368522965195,18.504676528899612,4.521381030901245,3.331491669265,20.79705016857905,21.666831424218724,9.523643543394451,2.714327000937558])
+        else:
+            if person == 'Samir':
+                #condval = torch.tensor([0]).to(torch.int64) #.to(self.device)
+                condval = np.array([0.1])
+                condvalbad = np.array([0.9])
+                mean = np.array([20.477754532775453,22.77594142259414,8.943654114365412,10.712970711297071,25.561506276150627,31.569735006973502,10.12510460251046,8.890306834030683,])
+                std = np.array([9.843984859529295,7.8700795426556445,2.184267197160608,4.016428843990136,13.291629562251334,10.801735697194195,2.4458652432669696,3.6610053859341303])
+            
+            #condvalbad = torch.tensor([1]).to(torch.int64)
+            elif person == 'Sonia':
+                #condval = torch.tensor([1]).to(torch.int64)
+                #condvalbad = torch.tensor([2]).to(torch.int64)
+                condval = np.array([0.1]) #np.array([0.9]) #np.array([0.6])
+                condvalbad = np.array([0.9])
+                mean = np.array([12.693347193347194,9.420859320859321,15.787179487179488,24.37186417186417,7.33083853083853,8.572765072765073,24.766389466389466,28.63139293139293,])
+                std = np.array([5.0676918939207605,4.278709410152058,8.025951618999134,16.31777423074967,4.699630460205841,4.770252420447796,15.780496877387819,19.274093253782787])
+            elif person == "Sruthi":
+                #condval = torch.tensor([2]).to(torch.int64)
+                #condvalbad = torch.tensor([3]).to(torch.int64)
+                condval = np.array([0.1]) #np.array([0.9]) #np.array([0.3])
+                condvalbad = np.array([0.9])
+                mean= np.array([5.376230661040788,8.166526019690577,27.226019690576653,31.612869198312236,14.103867791842475,13.167158931082982,22.12011251758087,20.867088607594937])
+                std = np.array([3.651494944259142,5.772440868944948,16.608860878596072,22.613865413206977,4.348816765789181,6.718509726195761,10.779130379832406,13.83257533754815])
+
+            else:
+                #condval = torch.tensor([3]).to(torch.int64)
+                #condvalbad = torch.tensor([0]).to(torch.int64)
+                condval = np.array([0.1]) #np.array([0.9]) #np.array([0.1])
+                condvalbad = np.array([0.9]) #np.array([0.9])
+                mean = np.array([18.297543859649124,23.576771929824563,9.026315789473685,10.502315789473684,22.304070175438596,27.723438596491228,16.91621052631579,8.84280701754386])
+                std = np.array([14.925368522965195,18.504676528899612,4.521381030901245,3.331491669265,20.79705016857905,21.666831424218724,9.523643543394451,2.714327000937558])
         
-        cur = cur2
-        result = {'bined_left_quad': bined_left_quad,  
-                  'bined_right_quad': bined_right_quad,
-                  'left_quad': emg_values_left_quad,
-                  'emg_values': np.array(list_of_emg_values),
-                  'orig_cam': np.array(list_of_orig_cam),
-                  'verts':np.array(list_of_verts),
-                  'right_quad':emg_values_right_quad,  
-                  '2dskeleton': twod_joints,
-                  'cond': cond,
-                  '3dskeleton': threed_joints[:,:25,:],
-                  'bboxes': bboxes,
+  
+        result = {'condval':condval,
+                    'condvalbad':condvalbad,
+                    #'mean': mean,
+                    #'std':std,
+                  'emg_values': emg_values.transpose(1,0),
                   'predcam': predcam,
+                  'bboxes': bboxes,
+                  '2dskeleton': twod_joints[:,:25,:],
+                  '3dskeleton': threed_joints[:,:25,:],
+                  'frame_paths': frame_paths,
+                  'indexpath': filepath.split("/")[-1]}
                   #'frames': list_of_frames,
-                  'frame_paths': list_of_frame_paths,
-                  'bins': np.linspace(0, self.maxemg, 20)}
+                  #'frame_paths': list_of_frame_paths[0],
+                  #'bins': np.linspace(0, self.maxemg, 20
         return result
 

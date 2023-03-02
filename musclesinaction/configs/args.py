@@ -28,6 +28,26 @@ def train_args():
     #args.break_train = float(args.break_train)
     return args
 
+def inference_args():
+    #pdb.set_trace()
+    thedict = benedict.from_yaml('musclesinaction/configs/inference.yaml')
+    #pdb.set_trace()
+    parser = argparse.ArgumentParser()
+
+    for key in thedict.keys():
+        parser.add_argument("--" + key, default=thedict[key])
+    args = parser.parse_args()
+    args.bs = int(args.bs)
+    args.learn_rate = float(args.learn_rate)
+    #movie = args.data_path_train
+    # movie = movie.split("/")[-1].split(".txt")[0].split("_")[2]    
+    movie = 'all'
+    #args.name = "oct20_" + movie + "_" + str(args.learn_rate) + "_" + args.modelname
+    args.modelname = args.modelname.split("_")[0]
+    #args.break_test = float(args.break_test)
+    #args.break_train = float(args.break_train)
+    return args
+
 def _str2bool(v): 
     if isinstance(v, bool):
         return v

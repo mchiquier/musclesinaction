@@ -1,8 +1,8 @@
 num_tokens: 50
 num_classes: 20
 dim_model: 128
-num_heads: 8
-num_encoder_layers: 4
+num_heads: 16
+num_encoder_layers: 8
 num_decoder_layers: 3
 dropout_p: 0.1
 feat_embedding_type: 'Conv1d'
@@ -15,29 +15,32 @@ gpt_block_size: 265  # 53*5 + 1
 gpt_n_layer: 19
 gpt_n_head: 16
 gpt_n_embd: 1024
-bs: 1
-maxemg: 200
+bs: 64
+maxemg: 1.0
 embedding: True
 cheat: False
-num_workers: 4
+num_workers: 0
 percent: 1.0
+predemg: 'True'
 classif: False
-resume: 'checkpoints/oct24transffinalconv_all_step30/model_250.pth' #False #'checkpoints/squats_openpose_new3zeros/model_291.pth' #'checkpoints/oct24transffinalconv_all_step30/model_250.pth' # #'checkpoints/sruthi_finetune/model_293.pth'
+threed: 'True'
+resume: #False  #'checkpoints/samirsonia_posetoemg_normalized/model_100.pth' #False #'checkpoints/samiremgtoposelargestlr/model_1076.pth' #'checkpoints/oct24transffinalconv_all_step30/model_250.pth' #  #screen -r finalmiavisualization  #'checkpoints/sruthi_scratch/model_250.pth'  #'checkpoints/final_sruthi5_finetune/model_656.pth' #False #'checkpoints/squats_openpose_new3zeros/model_291.pth' #'checkpoints/oct24transffinalconv_all_step30/model_250.pth' # #'checkpoints/sruthi_finetune/model_293.pth'
 device: 'cuda'
 checkpoint_path: 'checkpoints'
-learn_rate: 0.0005
-threed: False
-num_epochs: 15000
+learn_rate: 0.00005
+num_epochs: 25000
 step: 30
-name: 'finalmiatest'
+cond: 'True'
+name: 'test_generalization'
 log_path: 'logs'
 shifted: True
 seed: 100 
+std: 'False'
 lr_decay: 1.0
 plot: False
 modelname: 'transf'
 l1_lw: 1.0
 gradient_clip: 0.0
 optim: 'adam'
-data_path_train: '../../../vondrick/mia/VIBE/train6.txt'
-data_path_val: '../../../vondrick/mia/VIBE/val6.txt'
+data_path_train: '../../../vondrick/mia/VIBE/generalizationSamir/train.txt'
+data_path_val: '../../../vondrick/mia/VIBE/generalizationSamir/val.txt' #'../../../vondrick/mia/VIBE/correctsruthioodfiles/sruthi_cond_ood_valrest_LegBack.txt'

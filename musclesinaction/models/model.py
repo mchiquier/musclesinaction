@@ -57,6 +57,7 @@ class TransformerEnc(nn.Module):
     # Constructor
     def __init__(
         self,
+        threed,
         num_tokens,
         dim_model,
         num_classes,
@@ -76,16 +77,22 @@ class TransformerEnc(nn.Module):
         self.dim_model = dim_model
         self.device = device
         self.classif = classif
+        self.threed = threed
 
         # LAYERS
         self.positional_encoder = PositionalEncoding(
-            dim_model=128, dropout_p=dropout_p, max_len=int(step)
+            dim_model=126, dropout_p=dropout_p, max_len=int(step)
         )
 
         self.jointdim = nn.Linear(128, 8) #ALTERNATIVE
-        self.conv1 = nn.Conv2d(1,128,(50,9),(1,1),(0,4))
+        if self.threed == "True":
+            self.conv1 = nn.Conv2d(1,126,(75,9),(1,1),(0,4))
+        else:
+            self.conv1 = nn.Conv2d(1,126,(50,9),(1,1),(0,4))
         self.relu = nn.ReLU()
+        self.tanh = nn.Tanh()
         self.bn = nn.BatchNorm1d(dim_model) #B,S,D
+        #self.embedding = nn.Embedding(4, 128, max_norm=True)
         
         #self.clipproj = nn.Linear(512,256)
         self.encoder_layer = nn.TransformerEncoderLayer(d_model=128, nhead=num_heads)
@@ -93,28 +100,35 @@ class TransformerEnc(nn.Module):
         
         self.num_classes8 = num_classes
         if not self.classif:
-            self.out0 = nn.Linear(dim_model, 8)
+            self.out0 = nn.Linear(128, 8)
         else:
-            self.out = nn.Linear(dim_model, self.num_classes)
+            self.out = nn.Linear(128, self.num_classes)
         
-    def forward(self, src, src_pad_mask=None, tgt_pad_mask=None):
+    def forward(self, src, condval, src_pad_mask=None, tgt_pad_mask=None):
         # Src size must be (batch_size, src sequence length)
         # Tgt size must be (batch_size, tgt sequence length)
 
         src = src.float()* math.sqrt(self.dim_model) 
 
         src = torch.unsqueeze(src,dim=1).permute(0,1,3,2)
+        
         #pdb.set_trace()
         src = self.conv1(src)[:,:,0,:].permute(0,2,1)
         
         #newcond = torch.unsqueeze(cond,dim=1).repeat(1,30,2).type(torch.cuda.FloatTensor)
+        #pdb.set_trace()
         src = self.positional_encoder(src)
+        condition=torch.ones(src.shape[0],src.shape[1],2).to(self.device)
+        #condition = self.embedding(condval)
+        #condition = condition.repeat(1,30,1)
+        condition = condition*condval.reshape(condval.shape[0],1,1)
+        srccat = torch.cat([src,condition.type(torch.cuda.FloatTensor)],dim=2)
         #newsrc = torch.cat([src,newcond],dim=2)
         
         # We could use the parameter batch_first=True, but our KDL version doesn't support it yet, so we permute
         # to obtain size (sequence length, batch_size, dim_model),
-        src = src.permute(1,0,2) #newsrc.permute(1,0,2)#
-
+        src = srccat.permute(1,0,2) 
+        #newsrc = torch.cat([src,newcond],dim=2)
         # Transformer blocks - Out size = (sequence length, batch_size, num_tokens)
         transformer_out = self.transformer0(src,src_key_padding_mask=src_pad_mask)
        
@@ -124,8 +138,8 @@ class TransformerEnc(nn.Module):
         out0 = out0.permute(1,2,0)
         
         #out = out.permute(1,2,0)
-        if not self.classif:
-            out0 = self.relu(out0)
+        #if not self.classif:
+        #out0 = self.tanh(out0)
            
         return out0
       

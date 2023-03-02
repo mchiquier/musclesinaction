@@ -89,30 +89,6 @@ class NearestNeighbor(object):
 
 def main(args, logger):
 
-    trainpaths = [
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2096.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2097.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2098.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2099.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2100.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2101.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2103.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2104.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2105.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2107.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2108.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2109.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2110.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2111.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2112.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2113.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2125.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2126.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2129.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2131.txt',
-    ]
-    
-
     logger.info()
     logger.info('torch version: ' + str(torch.__version__))
     logger.save_args(args)
@@ -128,146 +104,68 @@ def main(args, logger):
 
     logger.info('Checkpoint path: ' + args.checkpoint_path)
     os.makedirs(args.checkpoint_path, exist_ok=True)
-    model_args = {'num_tokens': int(args.num_tokens),
-        'dim_model': int(args.dim_model),
-        'num_classes': int(args.num_classes),
-        'num_heads': int(args.num_heads),
-        'classif': args.classif,
-        'num_encoder_layers':int(args.num_encoder_layers),
-        'num_decoder_layers':int(args.num_decoder_layers),
-        'dropout_p':float(args.dropout_p),
-        'device': args.device,
-        'embedding': args.embedding}
 
-    model_args = {
-        'device': args.device}
-    my_model = convmodel.BasicConv(**model_args)
-    args.resume = 'checkpoints/oct24conv_all_step5' + '/model_200.pth'
-    checkpoint = torch.load(args.resume, map_location='cpu')
-    my_model.load_state_dict(checkpoint['my_model'])
-    my_model.eval()
-    #my_model = transmodel.TransformerEnc(**model_args)
-    #checkpoint = torch.load(args.resume, map_location='cpu')
-    #my_model.load_state_dict(checkpoint['my_model'])
-    #my_model.eval()
-    # Instantiate datasets.
+
+
     logger.info('Initializing data loaders...')
     start_time = time.time()
     (train_loader, train_loader_noshuffle, val_aug_loader, val_noaug_loader, dset_args) = \
         data.create_train_val_data_loaders(args, logger)
 
-    list_of_resultsnn = []
-    list_of_results = []
-    list_of_resultsnn = []
-    (train_loader, train_loader_noshuffle, val_aug_loader, val_noaug_loader, dset_args) = \
-    data.create_train_val_data_loaders(args, logger)
 
     list_of_train_emg = []
     list_of_train_skeleton = []
     list_of_val_emg = []
     list_of_val_skeleton = []
-    list_of_pred_emg = []
-    """for cur_step, data_retval in enumerate(tqdm.tqdm(train_loader)):
+
+    for cur_step, data_retval in enumerate(tqdm.tqdm(train_loader)):
         
         threedskeleton = data_retval['3dskeleton']
-        bboxes = data_retval['bboxes']
-        predcam = data_retval['predcam']
-        proj = 5000.0
-        
-        #pdb.set_trace()
-        height= bboxes[:,:,2:3].reshape(bboxes.shape[0]*bboxes.shape[1])
-        center = bboxes[:,:,:2].reshape(bboxes.shape[0]*bboxes.shape[1],-1)
-        focal=torch.tensor([[proj]]).repeat(height.shape[0],1)
-        predcamelong = predcam.reshape(predcam.shape[0]*predcam.shape[1],-1)
-        translation = convert_pare_to_full_img_cam(predcamelong,height,center,1080,1920,focal[:,0])
-        reshapethreed= threedskeleton.reshape(threedskeleton.shape[0]*threedskeleton.shape[1],threedskeleton.shape[2],threedskeleton.shape[3])
-        rotation=torch.unsqueeze(torch.eye(3),dim=0).repeat(reshapethreed.shape[0],1,1)
-        focal=torch.tensor([[proj]]).repeat(translation.shape[0],1)
-        imgdimgs=torch.unsqueeze(torch.tensor([1080.0/2, 1920.0/2]),dim=0).repeat(reshapethreed.shape[0],1)
-        twodkpts, skeleton = perspective_projection(reshapethreed, rotation, translation.float(),focal[:,0], imgdimgs)
-        twodkpts = twodkpts.reshape(threedskeleton.shape[0],30,twodkpts.shape[1],twodkpts.shape[2])
-        divide = torch.unsqueeze(torch.unsqueeze(torch.unsqueeze(torch.tensor([1080.0,1920.0]),dim=0),dim=0),dim=0).repeat(twodkpts.shape[0],twodkpts.shape[1],twodkpts.shape[2],1)
-
-            #pdb.set_trace()
-        twodkpts = twodkpts/divide
-        #twodkpts = twodkpts.reshape(threedskeleton.shape[0],twodkpts.shape[1],-1)
+        twodskeleton = data_retval['2dskeleton']
         emggroundtruth = data_retval['emg_values']
-        emggroundtruth = emggroundtruth/100.0
+        
         list_of_train_emg.append(emggroundtruth.reshape(-1).numpy())
-        list_of_train_skeleton.append(twodkpts.reshape(-1).numpy())"""
-    
-    #for trainpath in trainpaths:
-    #args.data_path_train = trainpath
-    #trainpath= args.data_path_train #= trainpath
-    #ignoremovie = trainpath
-    #ignoremovie = ignoremovie.split("/")[-1].split(".txt")[0].split("_")[2]
-    
-    list_of_train_emg = []
-    list_of_train_skeleton = []
-    list_of_val_emg = []
-    list_of_val_skeleton = []
-    list_of_pred_emg = []
+        list_of_train_skeleton.append(twodskeleton.reshape(-1).numpy())
+
 
     for cur_step, data_retval in enumerate(tqdm.tqdm(val_aug_loader)):
             
         threedskeleton = data_retval['3dskeleton']
-        bboxes = data_retval['bboxes']
-        predcam = data_retval['predcam']
-        proj = 5000.0
-    
-        #pdb.set_trace()
-        height= bboxes[:,:,2:3].reshape(bboxes.shape[0]*bboxes.shape[1])
-        center = bboxes[:,:,:2].reshape(bboxes.shape[0]*bboxes.shape[1],-1)
-        focal=torch.tensor([[proj]]).repeat(height.shape[0],1)
-        predcamelong = predcam.reshape(predcam.shape[0]*predcam.shape[1],-1)
-        translation = convert_pare_to_full_img_cam(predcamelong,height,center,1080,1920,focal[:,0])
-        reshapethreed= threedskeleton.reshape(threedskeleton.shape[0]*threedskeleton.shape[1],threedskeleton.shape[2],threedskeleton.shape[3])
-        rotation=torch.unsqueeze(torch.eye(3),dim=0).repeat(reshapethreed.shape[0],1,1)
-        focal=torch.tensor([[proj]]).repeat(translation.shape[0],1)
-        imgdimgs=torch.unsqueeze(torch.tensor([1080.0/2, 1920.0/2]),dim=0).repeat(reshapethreed.shape[0],1)
-        twodkpts, skeleton = perspective_projection(reshapethreed, rotation, translation.float(),focal[:,0], imgdimgs)
-        
-        twodkpts = twodkpts.reshape(threedskeleton.shape[0],int(args.step),twodkpts.shape[1],twodkpts.shape[2])
-        divide = torch.unsqueeze(torch.unsqueeze(torch.unsqueeze(torch.tensor([1080.0,1920.0]),dim=0),dim=0),dim=0).repeat(twodkpts.shape[0],twodkpts.shape[1],twodkpts.shape[2],1)
-            
-        #pdb.set_trace()
-        twodkpts = twodkpts/divide
-        
-        twodkpts = twodkpts.reshape(threedskeleton.shape[0],twodkpts.shape[1],-1)
+        twodskeleton = data_retval['2dskeleton']
         emggroundtruth = data_retval['emg_values']
-        emggroundtruth = emggroundtruth/100.0
         #pdb.set_trace()
         #torch.unsqueeze(twodkpts.permute(0,2,1),dim=1)
         #pdb.set_trace()
         #emg_output = my_model(twodkpts)
-        emg_output = my_model(torch.unsqueeze(twodkpts.permute(0,2,1),dim=1))#twodkpts)
         #emg_output = emg_output.permute(0,2,1)
         #pdb.set_trace()
-        list_of_pred_emg.append(emg_output[:,:,0,:].detach().numpy())
-        list_of_val_emg.append(emggroundtruth.numpy())
+        list_of_val_skeleton.append(twodskeleton.reshape(-1).numpy())
+        list_of_val_emg.append(emggroundtruth.reshape(-1).numpy())
         #list_of_val_skeleton.append(twodkpts.reshape(-1).numpy())
 
     np_val_emg = np.array(list_of_val_emg)
-    #np_train_emg = np.array(list_of_train_emg)
-    #np_val_skeleton = np.array(list_of_val_skeleton)
-    #np_train_skeleton = np.array(list_of_train_skeleton)
-    np_pred_emg = np.array(list_of_pred_emg)
+    np_train_emg = np.array(list_of_train_emg)
+    np_val_skeleton = np.array(list_of_val_skeleton)
+    np_train_skeleton = np.array(list_of_train_skeleton)
+
+    nn = NearestNeighbor()
+    nn.train(np_train_skeleton,np_train_emg)
+    print("here")
+    
+    ypred = nn.predict(np_val_skeleton)
     msel = torch.nn.MSELoss()
-    print(msel(torch.tensor(np_pred_emg)*100,torch.tensor(np_val_emg)*100))
-    #nn = NearestNeighbor()
-    #nn.train(np_train_skeleton,np_train_emg)
-    #ypred = nn.predict(np_val_skeleton)
-    #print(msel(torch.tensor(ypred)*100,torch.tensor(np_val_emg)*100))
+    print(torch.sqrt(msel(torch.tensor(ypred),torch.tensor(np_val_emg))))
+    pdb.set_trace()
     #list_of_results.append(msel(torch.tensor(ypred)*100,torch.tensor(np_val_emg)*100).numpy())
-    list_of_resultsnn.append(msel(torch.tensor(np_pred_emg)*100,torch.tensor(np_val_emg)*100).numpy())
-    print(list_of_results)
+    #list_of_resultsnn.append(msel(torch.tensor(np_pred_emg)*100,torch.tensor(np_val_emg)*100).numpy())
+    #print(list_of_results)
     #print(list_of_resultsnn)
-    print(np.mean(np.array(list_of_results)))
+    #print(np.mean(np.array(list_of_results)))
     #print(np.mean(np.array(list_of_resultsnn)))
         
         
-        #print(np.mean(np.sqrt(np.sum(np.square(ypred - np_val_emg), axis=1))), trainpath)
-        #pdb.set_trace()
+    #print(np.mean(np.sqrt(np.sum(np.square(ypred - np_val_emg), axis=1))), trainpath)
+    #pdb.set_trace()
 
 #TRAIN SKELETON MATRIX FLATTENED OVER TIME 
 #TRAIN EMG MATRIX FLATTENED OVER TIME 

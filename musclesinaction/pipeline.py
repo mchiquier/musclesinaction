@@ -103,15 +103,23 @@ class MyTrainPipeline(torch.nn.Module):
         '''
         cur = time.time()
         twodskeleton = data_retval['2dskeleton']
-        twodskeleton = twodskeleton.reshape(twodskeleton.shape[0],twodskeleton.shape[1],-1)
+        #twodskeleton = twodskeleton.reshape(twodskeleton.shape[0],twodskeleton.shape[1],-1)
 
-
+        #mean = data_retval['mean']
+        #std = data_retval['std']
+        #mean = torch.unsqueeze(mean,dim=2)
+        #std = torch.unsqueeze(std,dim=2)
         threedskeleton = data_retval['3dskeleton']
-        bboxes = data_retval['bboxes']
+
+
+        if self.train_args.threed == "True":
+            skeleton = threedskeleton
+        else:
+            skeleton = twodskeleton
+        """bboxes = data_retval['bboxes']
         predcam = data_retval['predcam']
         proj = 5000.0
         
-        #pdb.set_trace()
         height= bboxes[:,:,2:3].reshape(bboxes.shape[0]*bboxes.shape[1])
         center = bboxes[:,:,:2].reshape(bboxes.shape[0]*bboxes.shape[1],-1)
         focal=torch.tensor([[proj]]).to(self.device).repeat(height.shape[0],1)
@@ -124,62 +132,79 @@ class MyTrainPipeline(torch.nn.Module):
         twodkpts, skeleton = self.perspective_projection(reshapethreed, rotation, translation.float(),focal[:,0], imgdimgs)
         #skeleton = skeleton.reshape(twodskeleton.shape[0],30,skeleton.shape[1],skeleton.shape[2])
         #skeleton = skeleton.reshape(skeleton.shape[0],skeleton.shape[1],-1)
-        twodkpts = twodkpts.reshape(twodskeleton.shape[0],(self.train_args.step),twodkpts.shape[1],twodkpts.shape[2])
-        divide = torch.unsqueeze(torch.unsqueeze(torch.unsqueeze(torch.tensor([1080.0,1920.0]),dim=0),dim=0),dim=0).repeat(twodkpts.shape[0],twodkpts.shape[1],twodkpts.shape[2],1).to(self.device)
-        twodkpts = twodkpts/divide
+        twodkpts = twodkpts.reshape(twodskeleton.shape[0],(self.train_args.step),twodkpts.shape[1],twodkpts.shape[2])"""
+        if self.train_args.threed != "True":
+            divide = torch.unsqueeze(torch.unsqueeze(torch.unsqueeze(torch.tensor([1080.0,1920.0]),dim=0),dim=0),dim=0).repeat(skeleton.shape[0],skeleton.shape[1],skeleton.shape[2],1).to(self.device)
+            skeleton= skeleton/divide
+        #divide = torch.unsqueeze(torch.unsqueeze(torch.unsqueeze(torch.tensor([1080.0,1920.0]),dim=0),dim=0),dim=0).repeat(twodskeleton.shape[0],twodskeleton.shape[1],twodskeleton.shape[2],1).to(self.device)
+        #twodskeleton= twodskeleton/divide
         #pdb.set_trace()
         #
         #if self.train_args.modelname != 'transf':
-        twodkpts = twodkpts.reshape(twodskeleton.shape[0],twodkpts.shape[1],-1)
+        skeleton = skeleton.reshape(skeleton.shape[0],skeleton.shape[1],-1)
     
-        bined_left_quad = data_retval['bined_left_quad']-1
         emggroundtruth = data_retval['emg_values'].to(self.device)
-        cond = data_retval['cond'].to(self.device)
-        emggroundtruth = emggroundtruth/100.0
-
-        leftquad = data_retval['left_quad'].to(self.device)
-        leftquad = leftquad/100.0
-        leftquad[leftquad > 1.0] = 1.0
-        bins = data_retval['bins']
+        emggroundtruth = emggroundtruth
+        cond = data_retval['condval'].to(self.device)
+        badcond = data_retval['condvalbad'].to(self.device)
         #bined_left_quad = bined_left_quad.to(self.device)-1
-        twodskeleton = twodskeleton.to(self.device)
+        skeleton = skeleton.to(self.device)
         cur2 = time.time()
         #print(cur2-cur,"2")
         cur = cur2
         if self.train_args.modelname == 'transf':
-            emg_output = self.my_model(twodkpts) #, cond
+            if self.train_args.predemg == 'True':
+                emg_output = self.my_model(skeleton,cond) 
+                emg_output_wrong_condition = self.my_model(skeleton, badcond)
+            else:
+                pose_pred = self.my_model(emggroundtruth[:,:,:],cond)
+                pose_pred_wrong_condition = self.my_model(emggroundtruth[:,:,:],badcond)
         else:
-            emg_output = self.my_model(torch.unsqueeze(twodkpts.permute(0,2,1),dim=1))
+            emg_output = self.my_model(torch.unsqueeze(skeleton.permute(0,2,1),dim=1),cond)
         cur2 = time.time()
         #print(cur2-cur,"3")
         cur = cur2
         model_retval = dict()
         
-        meangt = torch.unsqueeze(torch.mean(emggroundtruth,dim=2),dim=2).repeat(1,1,10)
-
+  
         if self.train_args.modelname != 'transf':
             loss = self.mse(emg_output[:,:,0,:], (emggroundtruth[:,:,:]).type(torch.cuda.FloatTensor))
             #print(leftquad[:,:])
             model_retval['emg_output'] = emg_output[:,:,0,:]
         else:
-            mask = torch.ones(emg_output.shape).type(torch.cuda.FloatTensor)
-            for i in range(emg_output.shape[0]):                
-                if '2423' in data_retval['frame_paths'][0][i]:
-                    mask[i,4,:] = 1.0
-            total_loss = self.mse(emg_output*mask, (emggroundtruth*mask).type(torch.cuda.FloatTensor))
-            model_retval['emg_output'] = emg_output[:,:,:]
-        """else:
-            loss = self.crossent(emg_output, bined_left_quad.type(torch.cuda.LongTensor))
+            if self.train_args.predemg == 'True':
+                
+                if self.phase == "eval" or self.phase == "evalood":
+                    """if self.train_args.std=="True":
+                        emg_output_std = (emg_output*std) + mean
+                        emg_output_wrong_condition_std = (emg_output_wrong_condition*std) + mean
+                        model_retval['emg_output'] = emg_output_std[:,:,:]  
+                        model_retval['emg_output_wrong_condition'] = emg_output_wrong_condition_std[:,:,:] 
+                        total_loss = self.mse(emg_output_std, (emggroundtruth).type(torch.cuda.FloatTensor))
+                        bad_cond_loss = self.mse(emg_output_wrong_condition_std, (emggroundtruth).type(torch.cuda.FloatTensor))
+                    else:"""
+                    model_retval['emg_output'] = emg_output[:,:,:]  
+                    model_retval['emg_output_wrong_condition'] = emg_output_wrong_condition[:,:,:]   
+                    bad_cond_loss = self.mse(emg_output_wrong_condition, (emggroundtruth).type(torch.cuda.FloatTensor))
+                    total_loss = self.mse(emg_output, (emggroundtruth).type(torch.cuda.FloatTensor))
+                else:
+                    model_retval['emg_output'] = emg_output[:,:,:]  
+                    model_retval['emg_output_wrong_condition'] = emg_output_wrong_condition[:,:,:]   
+                    bad_cond_loss = self.mse(emg_output_wrong_condition, (emggroundtruth).type(torch.cuda.FloatTensor))
+                    total_loss = self.mse(emg_output, (emggroundtruth).type(torch.cuda.FloatTensor))
+            else:
+                #pdb.set_trace()
+                total_loss = self.mse(pose_pred, (skeleton[:,:,:]).type(torch.cuda.FloatTensor))
+                bad_cond_loss = self.mse(pose_pred_wrong_condition, (skeleton[:,:,:]).type(torch.cuda.FloatTensor))
+                model_retval['pose_output'] = pose_pred
+                model_retval['pose_output_wrong_condition'] = pose_pred_wrong_condition
         
-            list_of_values = []
-            _, ix = torch.topk(emg_output, k=1, dim=1)
-            values = torch.index_select(bins[0], 0, ix[0,0,:])
-            model_retval['emg_bins'] = torch.unsqueeze(values,dim=0)"""
 
         model_retval['emg_gt'] = emggroundtruth
         
         loss_retval = dict()
         loss_retval['cross_ent'] = total_loss 
+        loss_retval['bad_loss'] = bad_cond_loss
         cur2 = time.time()
         #print(cur2-cur,"4")
         cur = cur2

@@ -3,7 +3,7 @@ import pdb
 import torch
 import musclesinaction.configs.args as args
 import vis.logvis as logvis
-import musclesinaction.dataloader.data as data
+import musclesinaction.dataloader.data2 as data2
 import time
 import os
 import random
@@ -152,13 +152,13 @@ def main(args, logger):
     logger.info('Initializing data loaders...')
     start_time = time.time()
     (train_loader, train_loader_noshuffle, val_aug_loader, val_noaug_loader, dset_args) = \
-        data.create_train_val_data_loaders(args, logger)
+        data2.create_train_val_data_loaders(args, logger)
 
     list_of_resultsnn = []
     list_of_results = []
     list_of_resultsnn = []
     (train_loader, train_loader_noshuffle, val_aug_loader, val_noaug_loader, dset_args) = \
-    data.create_train_val_data_loaders(args, logger)
+    data2.create_train_val_data_loaders(args, logger)
 
     list_of_train_emg = []
     list_of_train_skeleton = []
@@ -263,6 +263,11 @@ def main(args, logger):
         #np_train_skeleton = np.array(list_of_train_skeleton)
         np_pred_emg = np.array(list_of_pred_emg)
         msel = torch.nn.MSELoss()
+        np_val_emg_cur = np.array(list_of_val_emg)*100
+        np_pred_emg_cur = np.array(list_of_pred_emg)*100
+        for i in range(np_val_emg_cur.shape[2]):
+            print(msel(torch.tensor(np_val_emg_cur[:,:,i,:])*100,torch.tensor(np_pred_emg_cur[:,:,i,:])*100), trainpath)
+        pdb.set_trace()
         
         print(msel(torch.tensor(np_pred_emg)*100,torch.tensor(np_val_emg)*100),trainpath)
         np_val_emg_notleft = np.array(list_of_val_emg_notleft)
