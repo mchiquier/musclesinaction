@@ -54,19 +54,68 @@ def _inference_one_epoch(args, train_pipeline, phase, train_data_loader, val_dat
         framelist = [data_retval['frame_paths'][i][j] for i in range(len(data_retval['frame_paths']))]
 
         #if 'ElbowPunch' in framelist[0] and 'Me' in framelist[0]:
-        if 'SlowSkater' in framelist[0]:
-            if 'Samir' in framelist[0]:
-
+        if 'Samir' in framelist[0]:
+            if 'RonddeJambeGood' in framelist[0]:
                 try:
                     # First, address every example independently.
                     # This part has zero interaction between any pair of GPUs.
+                    #pdb.set_trace()
+                    arms = torch.tensor(np.load("prednp13.npy"))
+                    #data_retval['emg_values'][:,2,:] = arms[:,2,:]
+                    #data_retval['emg_values'][:,3,:] = arms[:,3,:]
+                    #data_retval['emg_values'][:,6,:] = arms[:,6,:]
+                    #data_retval['emg_values'][:,7,:] = arms[:,7,:]
                     (model_retval, loss_retval) = train_pipeline[0](data_retval, cur_step, total_step)
+                    loggerone.handle_val_step(device,0, phase, cur_step, total_step, steps_per_epoch,data_retval, model_retval, model_retval, "original")
                     data_retval['old_emg_values'] = data_retval['emg_values']
 
-                    model_retval['emg_output'][:,1,:] = model_retval['emg_output'][:,1,:]/10#slowskatersamir
-                    model_retval['emg_output'][:,5,:] = model_retval['emg_output'][:,5,:]/10#slowskatersamir
+                    #pdb.set_trace()
+                    """current = model_retval['emg_output'][:,1,:] #ME, SQUAT
+                    current[current>torch.min(current)] = current[current>torch.min(current)]*3
 
-  
+                    current = model_retval['emg_output'][:,5,:] 
+                    current[current>torch.min(current)] = current[current>torch.min(current)]*3
+
+                    current = model_retval['emg_output'][:,2,:] 
+                    current[current>torch.min(current)] = current[current>torch.min(current)]*2
+
+                    current = model_retval['emg_output'][:,6,:] 
+                    current[current>torch.min(current)] = current[current>torch.min(current)]*2
+
+                    current = model_retval['emg_output'][:,0,:] 
+                    current[current>torch.min(current)] = current[current>torch.min(current)]*5
+
+                    current = model_retval['emg_output'][:,4,:] 
+                    current[current>torch.min(current)] = current[current>torch.min(current)]*5
+
+                    current = model_retval['emg_output'][:,0,:] 
+                    current[current>torch.min(current)] = current[current>torch.min(current)]/10
+
+                    current = model_retval['emg_output'][:,1,:] 
+                    current[current>torch.min(current)] = current[current>torch.min(current)]/10
+
+                    current = model_retval['emg_output'][:,4,:] 
+                    current[current>torch.min(current)] = current[current>torch.min(current)]/10
+
+                    current = model_retval['emg_output'][:,5,:] 
+                    current[current>torch.min(current)] = current[current>torch.min(current)]/10"""
+
+                    
+
+                    #model_retval['emg_output'][:,5,:] = model_retval['emg_output'][:,5,:]*2#squatjonny
+                    #model_retval['emg_output'][:,0,:] = model_retval['emg_output'][:,0,:]*3#squatjonny
+                    #model_retval['emg_output'][:,4,:] = model_retval['emg_output'][:,4,:]*2#squatjonny
+                    #current = model_retval['emg_output'][:,6,:]
+                    #current[current>torch.min(current)] = current[current>torch.min(current)]*20
+                    #model_retval['emg_output'][:,6,:] = current#model_retval['emg_output'][:,6,:]*10#miadecreaselateralspunch
+                    #current = model_retval['emg_output'][:,2,:]
+                    #current[current>torch.min(current)] = current[current>torch.min(current)]*15
+                    #model_retval['emg_output'][:,2,:] = current #model_retval['emg_output'][:,2,:]*10#miadecreaselateralspunch
+                    
+                    #model_retval['emg_output'][:,1,:] = model_retval['emg_output'][:,1,:]/10#slowskatersamir
+                    #model_retval['emg_output'][:,5,:] = model_retval['emg_output'][:,5,:]/10#slowskatersamir
+
+
                     #model_retval['emg_output'][:,1,:] = model_retval['emg_output'][:,1,:]*3#squatjonny
                     #model_retval['emg_output'][:,5,:] = model_retval['emg_output'][:,5,:]*2#squatjonny
                     #model_retval['emg_output'][:,0,:] = model_retval['emg_output'][:,0,:]*3#squatjonny
@@ -76,15 +125,27 @@ def _inference_one_epoch(args, train_pipeline, phase, train_data_loader, val_dat
                     #model_retval['emg_output'][:,6,:] = model_retval['emg_output'][:,6,:]*10#ronddejambesruthi
                     #model_retval['emg_output'][:,2,:] = model_retval['emg_output'][:,2,:]*10#ronddejambesruthi
                     #model_retval['emg_output'][:,4,:] = model_retval['emg_output'][:,4,:]*2#ronddejambesruthi
-
+                    #loggerone.handle_val_step(device,0, phase, cur_step, total_step, steps_per_epoch,data_retval, model_retval, model_retval, "edited")
                     #model_retval['emg_output'][:,6,:] = model_retval['emg_output'][:,6,:]/10#miadecreaselateralspunch
                     #model_retval['emg_output'][:,2,:] = model_retval['emg_output'][:,2,:]/10#miadecreaselateralspunch
-                    
+                    #model_retval['emg_output'][:,2,:] = arms[:,2,:]
+                    #model_retval['emg_output'][:,3,:] = arms[:,3,:]
+                    #model_retval['emg_output'][:,6,:] = arms[:,6,:]
+                    #model_retval['emg_output'][:,7,:] = arms[:,7,:]
+                    model_retval['emg_output'][:,0,:] = arms[:,0,:]
+                    model_retval['emg_output'][:,1,:] = arms[:,1,:]
+                    model_retval['emg_output'][:,4,:] = arms[:,4,:]
+                    model_retval['emg_output'][:,5,:] = arms[:,5,:]
+                    loggerone.handle_val_step(device,0, phase, cur_step, total_step, steps_per_epoch,data_retval, model_retval, model_retval, "edited")
+                    #model_retval['emg_output'][:,0,:] = arms[:,0,:]
+                    #model_retval['emg_output'][:,1,:] = arms[:,1,:]
+                    #model_retval['emg_output'][:,4,:] = arms[:,4,:]
+                    #model_retval['emg_output'][:,5,:] = arms[:,5,:]
                     data_retval['emg_values'] = model_retval['emg_output']
                     (model_retval, loss_retval) = train_pipeline[1](data_retval, cur_step, total_step)
                     ignoremovie = None
                     device = torch.device(args.device)
-                    loggertwo.handle_val_step(device,0, phase, cur_step, total_step, steps_per_epoch,data_retval, model_retval, model_retval)
+                    loggertwo.handle_val_step(device,0, phase, cur_step, total_step, steps_per_epoch,data_retval, model_retval, model_retval,"editedpred")
                     #pdb.set_trace()
                     print("test")
 
@@ -177,11 +238,13 @@ def main(args, argstwo, loggerone, loggertwo):
         networks[i] = networks[i].to(device)
     networks_nodp = [net for net in networks]
 
-    checkpoint = torch.load('checkpoints/generalization_test_cond_clean_posetoemg/latestcheckpoint.pth', map_location='cpu')
+    checkpoint = torch.load('checkpoints/generalization_new_cond_clean_posetoemg/model_100.pth', map_location='cpu')
     networks_nodp[0].load_state_dict(checkpoint['my_model'])
 
-    checkpoint = torch.load('checkpoints/generalization_test_cond_clean_emgtopose_threed/latestcheckpoint.pth', map_location='cpu')
+    checkpoint = torch.load('checkpoints/generalization_new_cond_clean_emgtopose_threed/model_100.pth', map_location='cpu')
     networks_nodp[1].load_state_dict(checkpoint['my_model'])
+
+    #pdb.set_trace()
 
     
 

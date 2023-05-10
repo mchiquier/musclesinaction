@@ -135,7 +135,7 @@ def main(args, logger):
                 emggroundtruth = data_retval['emg_values']
                 
                 list_of_train_emg.append(emggroundtruth.reshape(-1).numpy())
-                list_of_train_skeleton.append(twodskeleton.reshape(-1).numpy())
+                list_of_train_skeleton.append(threedskeleton.reshape(-1).numpy())
 
 
             for cur_step, data_retval in enumerate(tqdm.tqdm(val_aug_loader)):
@@ -149,7 +149,7 @@ def main(args, logger):
                 #emg_output = my_model(twodkpts)
                 #emg_output = emg_output.permute(0,2,1)
                 #pdb.set_trace()
-                list_of_val_skeleton.append(twodskeleton.reshape(-1).numpy())
+                list_of_val_skeleton.append(threedskeleton.reshape(-1).numpy())
                 list_of_val_emg.append(emggroundtruth.reshape(-1).numpy())
                 #list_of_val_skeleton.append(twodkpts.reshape(-1).numpy())
 
@@ -199,7 +199,7 @@ if __name__ == '__main__':
     args = args.train_args()
     args.bs = 1
 
-    logger = logvis.MyLogger(args, context='train')
+    logger = logvis.MyLogger(args, args, context='train')
 
     try:
 

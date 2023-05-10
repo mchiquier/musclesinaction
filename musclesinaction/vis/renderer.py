@@ -13,7 +13,7 @@
 # for Intelligent Systems. All rights reserved.
 #
 # Contact: ps-license@tuebingen.mpg.de
-
+import pdb
 import math
 import trimesh
 import pyrender
@@ -114,10 +114,17 @@ class Renderer:
     def part_segm_to_vertex_colors(self, part_segm, n_vertices, front, emg_values, alpha=1.0, pred=False):
         vertex_colors = np.ones((n_vertices, 4))
         viridis = matplotlib.cm.get_cmap('autumn_r') #mpl.cm.colormaps['autumn_r']
+        #pdb.set_trace()
         norm = mpl.colors.Normalize(vmin=0, vmax=0.5)
         emg_values = np.array(norm(emg_values.tolist()).tolist())
         emg_values[emg_values > 1.0]=1.0
+        emg_values[emg_values < 0.0]=0.0
+        #print(emg_values)
         emg_values = emg_values.tolist()
+        colorfader = []
+        for x in emg_values:
+            out=self.colorFader(x)
+            colorfader.append([out[0]/255,out[1]/255,out[2]/255,1.0])
         #emg_values = (viridis(norm(emg_values.tolist()))*255).astype('int')
         #emg_values = self.colorFader(norm(emg_values.tolist()).tolist()[0])
         
@@ -125,6 +132,7 @@ class Renderer:
             
             if front:
                 if k == 'rightUpLeg':
+                    #pdb.set_trace()
                     emg_valuesc = self.colorFader(emg_values[4])
                     vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255]) #np.array([emg_values[0][2],emg_values[0][1],emg_values[0][0], emg_values[0][3]])
                 elif k == 'leftUpLeg':
@@ -153,7 +161,7 @@ class Renderer:
                     vertex_colors[v] = np.array([emg_valuesc[2],emg_valuesc[1],emg_valuesc[0], 255])
                 else:
                     vertex_colors[v] = np.array([150, 150, 150,255])
-
+        
         #vertex_colors = np.ones((n_vertices, 4))
         #vertex_colors = np.ones((n_vertices, 3))*255
         #vertex_colors[:, 3] = alpha_values
@@ -163,10 +171,10 @@ class Renderer:
         #vertex_colors = np.concatenate([out,vertex_colors],axis=1)
         #vertex_colors[:, :3] = cm(norm_gt(vertex_labels))[:, :3]
 
-        return vertex_colors
+        return vertex_colors #colorfader
 
 
-    def render(self, img, verts, emg_values, cam, front=True, angle=None, axis=None, mesh_filename=None, color=[0.0, 0.0, 0.0],pred=False):
+    def render(self, flag, current_path, img, verts, emg_values, cam, front=True, angle=None, axis=None, mesh_filename=None, color=[0.0, 0.0, 0.0],pred=False):
 
         #mesh = trimesh.Trimesh(vertices=verts, faces=self.faces, process=False)
 
@@ -189,25 +197,32 @@ class Renderer:
             zfar=1000.
         )
 
-        material = pyrender.MetallicRoughnessMaterial(
+        """material = pyrender.MetallicRoughnessMaterial(
             metallicFactor=1.0,
             alphaMode='OPAQUE',
             baseColorFactor=(color[0], color[1], color[2], 0.0)
-        )
+        )"""
         
         part_segm_filepath = 'musclesinaction/smpl_vert_segmentation.json'
         part_segm = json.load(open(part_segm_filepath))
         #vertices = verts.detach().numpy()
 
         vertex_colors = self.part_segm_to_vertex_colors(part_segm, verts.shape[0],front,emg_values, pred)
+        #material = trimesh.visual.material.from_color(vertex_colors)
         if not front:
             mesh = trimesh.Trimesh(verts, self.faces, process=False, vertex_colors=vertex_colors)
             #mesh.apply_transform(Rx)
             mesh.apply_transform(Rxcam)
             mesh.apply_transform(Rxcamtwo)
+            #pdb.set_trace()
+            #mesh.export(current_path + ".obj")
             mesh = pyrender.Mesh.from_trimesh(mesh)
         else:
             mesh = trimesh.Trimesh(verts, self.faces, process=False, vertex_colors=vertex_colors)
+            #pdb.set_trace()
+            #obj, data = trimesh.exchange.export.export_obj(mesh, include_texture=True)
+            if flag=='True':
+                mesh.export(current_path + ".ply")
             mesh.apply_transform(Rx)
             mesh = pyrender.Mesh.from_trimesh(mesh)
         
@@ -240,4 +255,4 @@ class Renderer:
         self.scene.remove_node(cam_node)
         #self.scene.remove_node(jointscene)
 
-        return image
+        return image, vertex_colors

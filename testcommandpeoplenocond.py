@@ -6,7 +6,7 @@ import time
 command = 'tmux new-session -d -s my_session_clean_Ishaan_nocond \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=0 python musclesinaction/train.py \
---name generalization_test_nocond_Ishaan_clean \
+--name generalization_new_nocond_Ishaan_clean \
 --std False \
 --threed True \
 --cond False \
@@ -19,7 +19,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_Sruthi_nocond \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=1 python musclesinaction/train.py \
---name generalization_test_nocond_Sruthi_clean \
+--name generalization_new_nocond_Sruthi_clean \
 --std False \
 --cond False \
 --threed True \
@@ -33,7 +33,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_Sonia_nocond \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=2 python musclesinaction/train.py \
---name generalization_test_nocond_Sonia_clean \
+--name generalization_new_nocond_Sonia_clean \
 --std False \
 --cond False \
 --threed True \
@@ -47,7 +47,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_Samir_nocond \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=3 python musclesinaction/train.py \
---name generalization_test_nocond_Samir_clean \
+--name generalization_new_nocond_Samir_clean \
 --std False \
 --threed True \
 --cond False \
@@ -59,7 +59,7 @@ os.system(command)
 command = 'tmux new-session -d -s my_session_clean_David_nocond \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=4 python musclesinaction/train.py \
---name generalization_test_nocond_David_clean \
+--name generalization_new_nocond_David_clean \
 --std False \
 --threed True \
 --cond False \
@@ -72,7 +72,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_noclean_Jo \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=5 python musclesinaction/train.py \
---name generalization_test_nocond_Jo_clean \
+--name generalization_new_nocond_Jo_clean \
 --std False \
 --threed True \
 --cond False \
@@ -85,7 +85,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_Jonny_nocond \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=6 python musclesinaction/train.py \
---name generalization_test_nocond_Jonny_clean \
+--name generalization_new_nocond_Jonny_clean \
 --std False \
 --threed True \
 --predemg True \
@@ -99,7 +99,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_Lionel_nocond \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=7 python musclesinaction/train.py \
---name generalization_test_nocond_Lionel_clean \
+--name generalization_new_nocond_Lionel_clean \
 --std False \
 --cond False \
 --threed True \
@@ -113,7 +113,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_Me_nocond \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=0 python musclesinaction/train.py \
---name generalization_test_nocond_Me_clean \
+--name generalization_new_nocond_Me_clean \
 --std False \
 --threed True \
 --predemg True \
@@ -127,7 +127,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_Serena_nocond \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=1 python musclesinaction/train.py \
---name generalization_test_nocond_Serena_clean \
+--name generalization_new_nocond_Serena_clean \
 --std False \
 --threed True \
 --predemg True \

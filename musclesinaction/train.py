@@ -322,7 +322,7 @@ if __name__ == '__main__':
 
     args = args.train_args()
 
-    logger = logvis.MyLogger(args, context='train')
+    logger = logvis.MyLogger(args,args, context='train')
 
     try:
 

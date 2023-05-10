@@ -106,7 +106,8 @@ def main(args, logger):
     os.makedirs(args.checkpoint_path, exist_ok=True)
     
     if args.modelname == 'transf':
-        model_args = {'num_tokens': int(args.num_tokens),
+        model_args = {'threed': args.threed,
+            'num_tokens': int(args.num_tokens),
         'dim_model': int(args.dim_model),
         'num_classes': int(args.num_classes),
         'num_heads': int(args.num_heads),
@@ -254,7 +255,7 @@ if __name__ == '__main__':
     args = args.inference_args()
 
 
-    logger = logvis.MyLogger(args, context='train')
+    logger = logvis.MyLogger(args, args, context='train')
 
     try:
 

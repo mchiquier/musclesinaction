@@ -161,7 +161,7 @@ def main(args, logger):
         twodskeleton = data_retval['2dskeleton']
         emggroundtruth = data_retval['emg_values']
         emggroundtruth = data_retval['emg_values']
-        emggroundtruth = emggroundtruth
+        emggroundtruth = emggroundtruth.to(device)
         cond = data_retval['condval'].to(device)
         badcond = data_retval['condvalbad'].to(device)
         #bined_left_quad = bined_left_quad.to(self.device)-1
@@ -223,7 +223,7 @@ if __name__ == '__main__':
     args = args.inference_args()
     args.bs = 1
 
-    logger = logvis.MyLogger(args, context='train')
+    logger = logvis.MyLogger(args, args, context='train')
 
     try:
 

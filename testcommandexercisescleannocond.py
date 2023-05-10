@@ -7,7 +7,7 @@ import time
 command = 'tmux new-session -d -s my_session_clean_ElbowPunch \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=0 python musclesinaction/train.py \
---name generalization_test_nocond_ElbowPunch_clean \
+--name generalization_new_nocond_ElbowPunch_clean \
 --std False \
 --threed True \
 --cond False \
@@ -20,7 +20,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_FrontKick \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=1 python musclesinaction/train.py \
---name generalization_test_nocond_FrontKick_clean \
+--name generalization_new_nocond_FrontKick_clean \
 --std False \
 --threed True \
 --cond False \
@@ -34,7 +34,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_FrontPunch \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=2 python musclesinaction/train.py \
---name generalization_test_nocond_FrontPunch_clean \
+--name generalization_new_nocond_FrontPunch_clean \
 --std False \
 --threed True \
 --cond False \
@@ -48,7 +48,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_HighKick \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=3 python musclesinaction/train.py \
---name generalization_test_nocond_HighKick_clean \
+--name generalization_new_nocond_HighKick_clean \
 --std False \
 --threed True \
 --cond False \
@@ -62,7 +62,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_HookPunch \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=5 python musclesinaction/train.py \
---name generalization_test_nocond_HookPunch_clean \
+--name generalization_new_nocond_HookPunch_clean \
 --std False \
 --threed True \
 --predemg True \
@@ -76,7 +76,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_JumpingJack \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=6 python musclesinaction/train.py \
---name generalization_test_nocond_JumpingJack_clean \
+--name generalization_new_nocond_JumpingJack_clean \
 --std False \
 --threed True \
 --cond False \
@@ -90,7 +90,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_KneeKick \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=7 python musclesinaction/train.py \
---name generalization_test_nocond_KneeKick_clean \
+--name generalization_new_nocond_KneeKick_clean \
 --std False \
 --threed True \
 --cond False \
@@ -104,7 +104,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_LegBack \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=0 python musclesinaction/train.py \
---name generalization_test_nocond_LegBack_clean \
+--name generalization_new_nocond_LegBack_clean \
 --std False \
 --threed True \
 --cond False \
@@ -117,7 +117,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_LegCross \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=1 python musclesinaction/train.py \
---name generalization_test_nocond_LegCross_clean \
+--name generalization_new_nocond_LegCross_clean \
 --std False \
 --threed True \
 --cond False \
@@ -131,7 +131,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_RonddeJambe \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=2 python musclesinaction/train.py \
---name generalization_test_nocond_RonddeJambe_clean \
+--name generalization_new_nocond_RonddeJambe_clean \
 --std False \
 --threed True \
 --predemg True \
@@ -145,7 +145,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_Running \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=3 python musclesinaction/train.py \
---name generalization_test_nocond_Running_clean \
+--name generalization_new_nocond_Running_clean \
 --std False \
 --threed True \
 --cond False \
@@ -159,7 +159,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_Shuffle \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=5 python musclesinaction/train.py \
---name generalization_test_nocond_Shuffle_clean \
+--name generalization_new_nocond_Shuffle_clean \
 --std False \
 --threed True \
 --predemg True \
@@ -173,7 +173,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_SideLunges \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=6 python musclesinaction/train.py \
---name generalization_test_nocond_SideLunges_clean \
+--name generalization_new_nocond_SideLunges_clean \
 --std False \
 --threed True \
 --predemg True \
@@ -187,7 +187,7 @@ time.sleep(20)
 command = 'tmux new-session -d -s my_session_clean_SlowSkater \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=7 python musclesinaction/train.py \
---name generalization_test_nocond_SlowSkater_clean \
+--name generalization_new_nocond_SlowSkater_clean \
 --std False \
 --threed True \
 --predemg True \
@@ -196,16 +196,16 @@ send-keys "CUDA_VISIBLE_DEVICES=7 python musclesinaction/train.py \
 --data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_SlowSkater.txt" Enter'
 os.system(command)
 
-time.sleep(20)"""
-
+time.sleep(20)
+"""
 command = 'tmux new-session -d -s my_session_clean_Squat \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=7 python musclesinaction/train.py \
---name generalization_test_cond_Squat_clean \
+--name generalization_new_nocond_Squat_clean \
 --std False \
 --threed True \
 --predemg True \
---cond True \
+--cond False \
 --data_path_train ../../../vondrick/mia/VIBE/generalizationexercises/train_Squat.txt \
 --data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_Squat.txt" Enter'
 os.system(command)

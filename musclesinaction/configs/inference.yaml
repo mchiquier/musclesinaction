@@ -21,9 +21,9 @@ embedding: True
 cheat: False
 num_workers: 0
 percent: 1.0
-predemg: 'False'
+predemg: 'True'
 classif: False
-resume: 'checkpoints/generalization_test_cond_clean_emgtopose_threed/latestcheckpoint.pth' #'checkpoints/oct24transffinalconv_all_step30/model_250.pth' #  #screen -r finalmiavisualization  #'checkpoints/sruthi_scratch/model_250.pth'  #'checkpoints/final_sruthi5_finetune/model_656.pth' #False #'checkpoints/squats_openpose_new3zeros/model_291.pth' #'checkpoints/oct24transffinalconv_all_step30/model_250.pth' # #'checkpoints/sruthi_finetune/model_293.pth'
+resume: 'checkpoints/generalization_new_cond_clean_posetoemg/model_100.pth' #'checkpoints/oct24transffinalconv_all_step30/model_250.pth' #  #screen -r finalmiavisualization  #'checkpoints/sruthi_scratch/model_250.pth'  #'checkpoints/final_sruthi5_finetune/model_656.pth' #False #'checkpoints/squats_openpose_new3zeros/model_291.pth' #'checkpoints/oct24transffinalconv_all_step30/model_250.pth' # #'checkpoints/sruthi_finetune/model_293.pth'
 device: 'cuda'
 checkpoint_path: 'checkpoints'
 learn_rate: 0.00005
@@ -32,7 +32,7 @@ step: 30
 std: 'False'
 cond: 'True'
 threed: 'True'
-name: 'inference_generalization_test_ronddejambe_edit'
+name: 'very_last_edit'
 log_path: 'logs'
 shifted: True
 seed: 100 

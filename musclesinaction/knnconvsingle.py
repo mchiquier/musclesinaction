@@ -115,17 +115,48 @@ def main(args, logger):
 
     list_of_train_emg = []
     list_of_train_skeleton = []
+    list_of_train_id = []
     list_of_val_emg = []
     list_of_val_skeleton = []
+    list_of_val_id = []
+    dict_ex_to_id = {
+        'ElbowPunch': 0,
+        'FrontPunch':1,
+        'HookPunch':2,
+        'FrontKick': 3,
+        'KneeKick':4,
+        'LegBack':5,
+        'HighKick':6,
+        'LegCross':7,
+        'SlowSkater':8,
+        'JumpingJack':9,
+        'Running':10,
+        'Shuffle':11,
+        'RonddeJambe':12,
+        'RonddeJambeGood':12,
+        'RonddeJambeBad':12,
+        'BadSquat':13,
+        'GoodSquat':13,
+        'SquatBad':13,
+        'SquatGood':13,
+        'SideLunges':14,
+        'SideLunge':14,
+        'Squat':15
+    }
+
 
     for cur_step, data_retval in enumerate(tqdm.tqdm(train_loader)):
         
         threedskeleton = data_retval['3dskeleton']
+        #pdb.set_trace()
         twodskeleton = data_retval['2dskeleton']
         emggroundtruth = data_retval['emg_values']
+        exname = data_retval['frame_paths'][0][0].split("/")[8]
+        theid = dict_ex_to_id[exname]
+        list_of_train_id.append(theid)
         
         list_of_train_emg.append(emggroundtruth.reshape(-1).numpy())
-        list_of_train_skeleton.append(twodskeleton.reshape(-1).numpy())
+        list_of_train_skeleton.append(threedskeleton.reshape(-1).numpy())
 
 
     for cur_step, data_retval in enumerate(tqdm.tqdm(val_aug_loader)):
@@ -133,13 +164,14 @@ def main(args, logger):
         threedskeleton = data_retval['3dskeleton']
         twodskeleton = data_retval['2dskeleton']
         emggroundtruth = data_retval['emg_values']
+        exname = data_retval['frame_paths'][0][0].split("/")[8]
         #pdb.set_trace()
         #torch.unsqueeze(twodkpts.permute(0,2,1),dim=1)
         #pdb.set_trace()
         #emg_output = my_model(twodkpts)
         #emg_output = emg_output.permute(0,2,1)
         #pdb.set_trace()
-        list_of_val_skeleton.append(twodskeleton.reshape(-1).numpy())
+        list_of_val_skeleton.append(threedskeleton.reshape(-1).numpy())
         list_of_val_emg.append(emggroundtruth.reshape(-1).numpy())
         #list_of_val_skeleton.append(twodkpts.reshape(-1).numpy())
 
@@ -147,15 +179,19 @@ def main(args, logger):
     np_train_emg = np.array(list_of_train_emg)
     np_val_skeleton = np.array(list_of_val_skeleton)
     np_train_skeleton = np.array(list_of_train_skeleton)
-
+    np_train_id = np.array(list_of_train_id)
+    #pdb.set_trace()
     nn = NearestNeighbor()
     nn.train(np_train_skeleton,np_train_emg)
+    #nn.train(np_train_skeleton,np_train_id)
     print("here")
     
     ypred = nn.predict(np_val_skeleton)
+    pdb.set_trace()
+    #np.save(exname + "_final.npy", ypred)
     msel = torch.nn.MSELoss()
     print(torch.sqrt(msel(torch.tensor(ypred),torch.tensor(np_val_emg))))
-    pdb.set_trace()
+    #pdb.set_trace()
     #list_of_results.append(msel(torch.tensor(ypred)*100,torch.tensor(np_val_emg)*100).numpy())
     #list_of_resultsnn.append(msel(torch.tensor(np_pred_emg)*100,torch.tensor(np_val_emg)*100).numpy())
     #print(list_of_results)
@@ -184,7 +220,7 @@ if __name__ == '__main__':
     args = args.train_args()
     args.bs = 1
 
-    logger = logvis.MyLogger(args, context='train')
+    logger = logvis.MyLogger(args, args, context='train')
 
     try:
 

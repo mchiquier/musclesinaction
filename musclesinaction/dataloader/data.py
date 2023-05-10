@@ -16,6 +16,12 @@ import joblib
 from matplotlib import animation
 import time
 
+torch.backends.cudnn.deterministic = True
+random.seed(1)
+torch.manual_seed(1)
+torch.cuda.manual_seed(1)
+np.random.seed(1)
+
 def _read_image_robust(img_path, no_fail=False):
     '''
     Loads and returns an image that meets conditions along with a success flag, in order to avoid
@@ -385,7 +391,12 @@ class MyMuscleDataset(torch.utils.data.Dataset):
         twod_joints = np.load("../../../vondrick/mia/VIBE/" + filepath + "/joints2d.npy")
         threed_joints = np.load("../../../vondrick/mia/VIBE/" + filepath + "/joints3d.npy")
         predcam = np.load("../../../vondrick/mia/VIBE/" + filepath + "/predcam.npy")
+        origcam = np.load("../../../vondrick/mia/VIBE/" + filepath + "/origcam.npy")
         bboxes = np.load("../../../vondrick/mia/VIBE/" + filepath + "/bboxes.npy")
+        pose = np.load("../../../vondrick/mia/VIBE/" + filepath + "/pose.npy")
+        twodskeletonsmpl = np.load("../../../vondrick/mia/VIBE/" + filepath + "/joints2dsmpl.npy")
+        betas = np.load("../../../vondrick/mia/VIBE/" + filepath + "/betas.npy")
+        verts = np.load("../../../vondrick/mia/VIBE/" + filepath + "/verts.npy")
 
         file = open("../../../vondrick/mia/VIBE/" + filepath + "/frame_paths.txt", 'r')
         line = file.readlines()[0]
@@ -397,6 +408,39 @@ class MyMuscleDataset(torch.utils.data.Dataset):
 
         #list_of_frames=np.array(list_of_frames)
         person = filepath.split("/")[2]
+        if person == 'David':
+            themax = np.array([226.0,159.0,283.0,233.0,406.0,139.0,276.0,235.0])
+            themin = np.array([7.0,8.0,9.0,2.0,9.0,10.0,8.0,2.0])
+
+        elif person == 'Ishaan':
+            themax = np.array([355.0,231.0,242.0,128.0,473.0,183.0,197.0,98.0])
+            themin = np.array([3.0,2.0,2.0,2.0,2.0,3.0,2.0,2.0])
+
+        elif person == "Jo":
+            themax = np.array([119.0,178.0,83.0,102.0,176.0,106.0,95.0,75.0])
+            themin = np.array([2.0,2.0,2.0,1.0,4.0,3.0,2.0,1.0])
+        elif person == "Jonny":
+            themax = np.array([207.0,97.0,154.0,112.0,182.0,122.0,176.0,123.0])
+            themin = np.array([2.0,3.0,2.0,1.0,3.0,3.0,3.0,2.0])
+        elif person == "Lionel":
+            themax = np.array([177.0,125.0,85.0,167.0,176.0,110.0,130.0,199.0])
+            themin = np.array([2.0,3.0,0.0,1.0,1.0,2.0,2.0,3.0])
+        elif person == "Me":
+            themax = np.array([213.0,115.0,192.0,128.0,207.0,147.0,218.0,114.0])
+            themin = np.array([2.0,1.0,2.0,1.0,2.0,2.0,4.0,1.0])
+        elif person == "Samir":
+            themax = np.array([289.0,141.0,116.0,179.0,452.0,174.0,135.0,177.0])
+            themin = np.array([1.0,3.0,2.0,7.0,2.0,1.0,3.0,4.0])
+        elif person == "Serena":
+            themax = np.array([177.0,120.0,175.0,146.0,147.0,94.0,243.0,209.0])
+            themin = np.array([3.0,2.0,2.0,6.0,2.0,0.0,2.0,6.0])
+        elif person == "Sonia":
+            themax = np.array([154.0,53.0,74.0,102.0,183.0,59.0,152.0,135.0])
+            themin = np.array([2.0,3.0,2.0,2.0,3.0,1.0,2.0,2.0])
+        else:
+            themax = np.array([174.0,134.0,125.0,151.0,170.0,161.0,119.0,137.0])
+            themin = np.array([3.0,14.0,4.0,3.0,7.0,5.0,8.0,5.0])
+
         if self.cond=='True':
             if person == 'David':
                 #condval = torch.tensor([0]).to(torch.int64) #.to(self.device)
@@ -479,11 +523,16 @@ class MyMuscleDataset(torch.utils.data.Dataset):
   
         result = {'condval':condval,
                     'condvalbad':condvalbad,
-                    #'mean': mean,
-                    #'std':std,
+                    'max': themax,
+                    'min':themin,
                   'emg_values': emg_values.transpose(1,0),
                   'predcam': predcam,
+                  'origcam': origcam,
                   'bboxes': bboxes,
+                  'pose':pose,
+                  'betas': betas,
+                  'verts': verts,
+                  '2dskeletonsmpl': twodskeletonsmpl,
                   '2dskeleton': twod_joints[:,:25,:],
                   '3dskeleton': threed_joints[:,:25,:],
                   'frame_paths': frame_paths,

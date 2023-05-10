@@ -110,6 +110,7 @@ class MyTrainPipeline(torch.nn.Module):
         #mean = torch.unsqueeze(mean,dim=2)
         #std = torch.unsqueeze(std,dim=2)
         threedskeleton = data_retval['3dskeleton']
+        #pose = data_retval['pose']
 
 
         if self.train_args.threed == "True":
@@ -183,6 +184,7 @@ class MyTrainPipeline(torch.nn.Module):
                         total_loss = self.mse(emg_output_std, (emggroundtruth).type(torch.cuda.FloatTensor))
                         bad_cond_loss = self.mse(emg_output_wrong_condition_std, (emggroundtruth).type(torch.cuda.FloatTensor))
                     else:"""
+                    #pdb.set_trace()
                     model_retval['emg_output'] = emg_output[:,:,:]  
                     model_retval['emg_output_wrong_condition'] = emg_output_wrong_condition[:,:,:]   
                     bad_cond_loss = self.mse(emg_output_wrong_condition, (emggroundtruth).type(torch.cuda.FloatTensor))

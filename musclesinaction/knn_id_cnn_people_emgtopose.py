@@ -70,7 +70,7 @@ class NearestNeighbor(object):
         """ X is N x D where each row is an example we wish to predict label for """
         num_test = X.shape[0]
         # lets make sure that the output type matches the input type
-        Ypred = np.zeros((num_test,240), dtype=self.ytr.dtype)
+        Ypred = np.zeros((num_test,self.ytr.shape[1]), dtype=self.ytr.dtype)
 
         # loop over all test rows
         for i in range(num_test):
@@ -135,7 +135,7 @@ def main(args, logger):
                 emggroundtruth = data_retval['emg_values']
                 
                 list_of_train_emg.append(emggroundtruth.reshape(-1).numpy())
-                list_of_train_skeleton.append(twodskeleton.reshape(-1).numpy())
+                list_of_train_skeleton.append(threedskeleton.reshape(-1).numpy())
 
 
             for cur_step, data_retval in enumerate(tqdm.tqdm(val_aug_loader)):
@@ -149,7 +149,7 @@ def main(args, logger):
                 #emg_output = my_model(twodkpts)
                 #emg_output = emg_output.permute(0,2,1)
                 #pdb.set_trace()
-                list_of_val_skeleton.append(twodskeleton.reshape(-1).numpy())
+                list_of_val_skeleton.append(threedskeleton.reshape(-1).numpy())
                 list_of_val_emg.append(emggroundtruth.reshape(-1).numpy())
                 #list_of_val_skeleton.append(twodkpts.reshape(-1).numpy())
 
@@ -162,12 +162,14 @@ def main(args, logger):
             nn.train(np_train_emg,np_train_skeleton)
             print("here")
             
+            #pdb.set_trace()
             ypred = nn.predict(np_val_emg)
             list_of_list_of_val_pose.append(np_val_skeleton)
             list_of_list_of_pred_pose.append(ypred)
     gtemg = np.concatenate(list_of_list_of_val_pose,axis=0)
     predemg = np.concatenate(list_of_list_of_pred_pose,axis=0)
     msel = torch.nn.MSELoss()
+    print(torch.sqrt(msel(torch.tensor(gtemg),torch.tensor(predemg))))
     pdb.set_trace()
     print(torch.sqrt(msel(torch.tensor(gtemg),torch.tensor(predemg))))
 
@@ -199,7 +201,7 @@ if __name__ == '__main__':
     args = args.train_args()
     args.bs = 1
 
-    logger = logvis.MyLogger(args, context='train')
+    logger = logvis.MyLogger(args, args, context='train')
 
     try:
 

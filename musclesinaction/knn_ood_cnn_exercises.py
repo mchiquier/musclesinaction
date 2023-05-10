@@ -70,7 +70,7 @@ class NearestNeighbor(object):
         """ X is N x D where each row is an example we wish to predict label for """
         num_test = X.shape[0]
         # lets make sure that the output type matches the input type
-        Ypred = np.zeros((num_test,240), dtype=self.ytr.dtype)
+        Ypred = np.zeros((num_test,1), dtype=self.ytr.dtype)
 
         # loop over all test rows
         for i in range(num_test):
@@ -83,7 +83,7 @@ class NearestNeighbor(object):
             if distance == 'L2':
                 distances = np.sqrt(np.sum(np.square(self.Xtr - X[i,:]), axis=1))
             min_index = np.argmin(distances) # get the index with smallest distance
-            Ypred[i,:] = self.ytr[min_index] # predict the label of the nearest example
+            Ypred[i,:] = distances[min_index] #self.ytr[min_index] # predict the label of the nearest example
 
         return Ypred
 
@@ -131,7 +131,7 @@ def main(args, logger):
             emggroundtruth = data_retval['emg_values']
             
             list_of_train_emg.append(emggroundtruth.reshape(-1).numpy())
-            list_of_train_skeleton.append(twodskeleton.reshape(-1).numpy())
+            list_of_train_skeleton.append(threedskeleton.reshape(-1).numpy())
 
 
         for cur_step, data_retval in enumerate(tqdm.tqdm(val_aug_loader)):
@@ -139,14 +139,16 @@ def main(args, logger):
             threedskeleton = data_retval['3dskeleton']
             twodskeleton = data_retval['2dskeleton']
             emggroundtruth = data_retval['emg_values']
+            exname = data_retval['frame_paths'][0][0].split("/")[8]
             #pdb.set_trace()
             #torch.unsqueeze(twodkpts.permute(0,2,1),dim=1)
             #pdb.set_trace()
             #emg_output = my_model(twodkpts)
             #emg_output = emg_output.permute(0,2,1)
             #pdb.set_trace()
-            list_of_val_skeleton.append(twodskeleton.reshape(-1).numpy())
+            list_of_val_skeleton.append(threedskeleton.reshape(-1).numpy())
             list_of_val_emg.append(emggroundtruth.reshape(-1).numpy())
+            #list_of_val_emg.append(emggroundtruth.reshape(-1).numpy())
             #list_of_val_skeleton.append(twodkpts.reshape(-1).numpy())
 
         np_val_emg = np.array(list_of_val_emg)
@@ -162,10 +164,14 @@ def main(args, logger):
         list_of_list_of_val_emg.append(np_val_emg)
         list_of_list_of_pred_emg.append(ypred)
     gtemg = np.concatenate(list_of_list_of_val_emg,axis=0)
+
     predemg = np.concatenate(list_of_list_of_pred_emg,axis=0)
-    msel = torch.nn.MSELoss()
-    pdb.set_trace()
-    print(torch.sqrt(msel(torch.tensor(gtemg),torch.tensor(predemg))))
+    np.save(exname + "_final_dist.npy", predemg)
+    #msel = torch.nn.MSELoss()
+    #pdb.set_trace()
+    #print(torch.sqrt(msel(torch.tensor(gtemg),torch.tensor(predemg))))
+    #np.save(exname + "_final_error.npy", np.array([torch.sqrt(msel(torch.tensor(gtemg),torch.tensor(predemg))).item()]))
+    #print(torch.sqrt(msel(torch.tensor(gtemg),torch.tensor(predemg))))
 
     #list_of_results.append(msel(torch.tensor(ypred)*100,torch.tensor(np_val_emg)*100).numpy())
     #list_of_resultsnn.append(msel(torch.tensor(np_pred_emg)*100,torch.tensor(np_val_emg)*100).numpy())
@@ -195,7 +201,7 @@ if __name__ == '__main__':
     args = args.train_args()
     args.bs = 1
 
-    logger = logvis.MyLogger(args, context='train')
+    logger = logvis.MyLogger(args, args, context='train')
 
     try:
 

@@ -3,14 +3,15 @@ import pdb
 import torch
 import musclesinaction.configs.args as args
 import vis.logvis as logvis
-import musclesinaction.dataloader.data2 as data2
+import musclesinaction.dataloader.data as data
 import time
 import os
+import musclesinaction.models.modelemgtopose as transmodelemgtopose
+import musclesinaction.models.model as transmodelposetoemg
 import random
 import torch
 import tqdm
-import musclesinaction.models.modelbert as transmodel
-import musclesinaction.models.basicconv as convmodel
+from collections import OrderedDict
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 
@@ -89,30 +90,6 @@ class NearestNeighbor(object):
 
 def main(args, logger):
 
-    trainpaths = [
-        '../../../vondrick/mia/VIBE/ignore/train_ignore_2096.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2097.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2098.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2099.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2100.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2101.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2103.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2104.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2105.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2107.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2108.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2109.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2110.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2111.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2112.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2113.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2125.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2126.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2129.txt',
-    '../../../vondrick/mia/VIBE/ignore/train_ignore_2131.txt',
-    ]
-    
-
     logger.info()
     logger.info('torch version: ' + str(torch.__version__))
     logger.save_args(args)
@@ -127,7 +104,6 @@ def main(args, logger):
     args.checkpoint_path = args.checkpoint_path + "/" + args.name
 
     logger.info('Checkpoint path: ' + args.checkpoint_path)
-    os.makedirs(args.checkpoint_path, exist_ok=True)
     """model_args = {'num_tokens': int(args.num_tokens),
         'dim_model': int(args.dim_model),
         'num_classes': int(args.num_classes),
@@ -139,168 +115,179 @@ def main(args, logger):
         'device': args.device,
         'embedding': args.embedding}"""
 
-    model_args = {
-        'device': args.device}
-    my_model = convmodel.BasicConv(**model_args)
-    #my_model = transmodel.TransformerEnc(**model_args)
-    checkpoint = torch.load(args.resume, map_location='cpu')
-    my_model.load_state_dict(checkpoint['my_model'])
-    my_model.eval()
+
     # Instantiate datasets.
     logger.info('Initializing data loaders...')
     start_time = time.time()
     (train_loader, train_loader_noshuffle, val_aug_loader, val_noaug_loader, dset_args) = \
-        data2.create_train_val_data_loaders(args, logger)
+        data.create_train_val_data_loaders(args, logger)
 
     list_of_resultsnn = []
     list_of_results = []
     list_of_resultsnn = []
     (train_loader, train_loader_noshuffle, val_aug_loader, val_noaug_loader, dset_args) = \
-    data2.create_train_val_data_loaders(args, logger)
+    data.create_train_val_data_loaders(args, logger)
+
+    model_args = {'threed': args.threed,
+            'num_tokens': int(args.num_tokens),
+        'dim_model': int(args.dim_model),
+        'num_classes': int(args.num_classes),
+        'num_heads': int(args.num_heads),
+        'classif': args.classif,
+        'num_encoder_layers':int(args.num_encoder_layers),
+        'num_decoder_layers':int(args.num_decoder_layers),
+        'dropout_p':float(args.dropout_p),
+        'device': args.device,
+        'embedding': args.embedding,
+        'step': int(args.step)}
+    my_model = transmodelposetoemg.TransformerEnc(**model_args)
+    checkpoint = torch.load(args.resume, map_location='cpu')
+    my_model.load_state_dict(checkpoint['my_model'])
+    my_model.to('cuda')
+
+    
+    def get_activation(name):
+        def hook(model, input, output):
+            activation[name] = output.detach()
+        return hook
+    
+    my_model.transformer0.layers[-2].register_forward_hook(get_activation('encoder_penultimate_layer'))
+    activation = {}
+
 
     list_of_train_emg = []
     list_of_train_skeleton = []
     list_of_val_emg = []
     list_of_val_skeleton = []
     list_of_pred_emg = []
-    """for cur_step, data_retval in enumerate(tqdm.tqdm(train_loader)):
-        
-        threedskeleton = data_retval['3dskeleton']
-        bboxes = data_retval['bboxes']
-        predcam = data_retval['predcam']
-        proj = 5000.0
-        
-        #pdb.set_trace()
-        height= bboxes[:,:,2:3].reshape(bboxes.shape[0]*bboxes.shape[1])
-        center = bboxes[:,:,:2].reshape(bboxes.shape[0]*bboxes.shape[1],-1)
-        focal=torch.tensor([[proj]]).repeat(height.shape[0],1)
-        predcamelong = predcam.reshape(predcam.shape[0]*predcam.shape[1],-1)
-        translation = convert_pare_to_full_img_cam(predcamelong,height,center,1080,1920,focal[:,0])
-        reshapethreed= threedskeleton.reshape(threedskeleton.shape[0]*threedskeleton.shape[1],threedskeleton.shape[2],threedskeleton.shape[3])
-        rotation=torch.unsqueeze(torch.eye(3),dim=0).repeat(reshapethreed.shape[0],1,1)
-        focal=torch.tensor([[proj]]).repeat(translation.shape[0],1)
-        imgdimgs=torch.unsqueeze(torch.tensor([1080.0/2, 1920.0/2]),dim=0).repeat(reshapethreed.shape[0],1)
-        twodkpts, skeleton = perspective_projection(reshapethreed, rotation, translation.float(),focal[:,0], imgdimgs)
-        twodkpts = twodkpts.reshape(threedskeleton.shape[0],30,twodkpts.shape[1],twodkpts.shape[2])
-        divide = torch.unsqueeze(torch.unsqueeze(torch.unsqueeze(torch.tensor([1080.0,1920.0]),dim=0),dim=0),dim=0).repeat(twodkpts.shape[0],twodkpts.shape[1],twodkpts.shape[2],1)
-
-            #pdb.set_trace()
-        twodkpts = twodkpts/divide
-        #twodkpts = twodkpts.reshape(threedskeleton.shape[0],twodkpts.shape[1],-1)
-        emggroundtruth = data_retval['emg_values']
-        emggroundtruth = emggroundtruth/100.0
-        list_of_train_emg.append(emggroundtruth.reshape(-1).numpy())
-        list_of_train_skeleton.append(twodkpts.reshape(-1).numpy())"""
+    
     list_of_class = []
     #for trainpath in trainpaths:
     #    args.data_path_train = trainpath
     #    trainpath= args.data_path_train #= trainpath
-    for cur_step, data_retval in enumerate(tqdm.tqdm(train_loader)):
+    for cur_step, data_retval in enumerate(tqdm.tqdm(val_aug_loader)):
         #pdb.set_trace()
         #ignoremovie = trainpath
-        ignoremovie = data_retval['frame_paths'][0][0]
-        ignoremovie =  ignoremovie.split("/")[-2].split("_")[1]
+        framelist = [data_retval['frame_paths'][i][0] for i in range(len(data_retval['frame_paths']))]
+        ex = framelist[0].split("/")[8]
+        if 'RonddeJambe' in ex:
+            ex = 'RonddeJambe'
+        if 'Squat' in ex:
+            ex = 'Squat'
         threedskeleton = data_retval['3dskeleton']
         bboxes = data_retval['bboxes']
         predcam = data_retval['predcam']
-        proj = 5000.0
-        
-        #pdb.set_trace()
-        height= bboxes[:,:,2:3].reshape(bboxes.shape[0]*bboxes.shape[1])
-        center = bboxes[:,:,:2].reshape(bboxes.shape[0]*bboxes.shape[1],-1)
-        focal=torch.tensor([[proj]]).repeat(height.shape[0],1)
-        predcamelong = predcam.reshape(predcam.shape[0]*predcam.shape[1],-1)
-        translation = convert_pare_to_full_img_cam(predcamelong,height,center,1080,1920,focal[:,0])
-        reshapethreed= threedskeleton.reshape(threedskeleton.shape[0]*threedskeleton.shape[1],threedskeleton.shape[2],threedskeleton.shape[3])
-        rotation=torch.unsqueeze(torch.eye(3),dim=0).repeat(reshapethreed.shape[0],1,1)
-        focal=torch.tensor([[proj]]).repeat(translation.shape[0],1)
-        imgdimgs=torch.unsqueeze(torch.tensor([1080.0/2, 1920.0/2]),dim=0).repeat(reshapethreed.shape[0],1)
-        twodkpts, skeleton = perspective_projection(reshapethreed, rotation, translation.float(),focal[:,0], imgdimgs)
 
-        twodkpts = twodkpts.reshape(threedskeleton.shape[0],30,twodkpts.shape[1],twodkpts.shape[2])
-        divide = torch.unsqueeze(torch.unsqueeze(torch.unsqueeze(torch.tensor([1080.0,1920.0]),dim=0),dim=0),dim=0).repeat(twodkpts.shape[0],twodkpts.shape[1],twodkpts.shape[2],1)
-
-        #pdb.set_trace()
-        twodkpts = twodkpts/divide
-
-        twodkpts = twodkpts.reshape(threedskeleton.shape[0],twodkpts.shape[1],-1)
         emggroundtruth = data_retval['emg_values']
         emggroundtruth = emggroundtruth/100.0
-        
-        list_of_val_emg.append(emggroundtruth.numpy())
-        list_of_val_skeleton.append(twodkpts.reshape(-1).numpy())
+
+        #threedskeleton = threedskeleton.reshape(threedskeleton.shape[0],-1)
+
+        emggroundtruth = data_retval['emg_values']
+        emggroundtruth = emggroundtruth
+        cond = data_retval['condval']
+        badcond = data_retval['condvalbad']
+        #bined_left_quad = bined_left_quad.to(self.device)-1
+        skeleton = threedskeleton
+        cur2 = time.time()
+        #print(cur2-cur,"2")
+        cur = cur2
+        skeleton = skeleton.reshape(skeleton.shape[0],skeleton.shape[1],-1)
         #pdb.set_trace()
-        list_of_class.append(int(ignoremovie))
+        activation = {}
+    
+        emg_output = my_model(skeleton.to('cuda'),cond.to('cuda')) 
+           
+        
+        list_of_val_emg.append(activation['encoder_penultimate_layer'].reshape(-1).detach().cpu().numpy())
+        #pdb.set_trace()
+        list_of_val_skeleton.append(threedskeleton.reshape(-1).numpy())
+        #pdb.set_trace()
+        list_of_class.append(ex)
 
     np_val_emg = np.array(list_of_val_emg)
     np_val_skeleton = np.array(list_of_val_skeleton)
     reshape_emg = np_val_emg.reshape(np_val_emg.shape[0],-1)
     reshape_skeleton = np_val_skeleton.reshape(np_val_skeleton.shape[0],-1)
-    np_list_of_class = np.array(list_of_class)
-    tsne = TSNE(n_components=2, random_state=0)
+    tsne = TSNE(n_components=2, random_state=100)
     X_2d = tsne.fit_transform(reshape_emg)
     X_2d_skeleton = tsne.fit_transform(reshape_skeleton)
     names = sorted(set(list_of_class))
     cm = plt.get_cmap('gist_rainbow')
     markers = ['s','o','x']
     dict_color = {}
+
+
+    ex_type = {}
     dict_markers = {}
-    for i in range(20):
-        dict_color[names[i]] = cm(1.*(i+1)/20)
-        dict_markers[names[i]] = markers[i%3]
+    pdb.set_trace()
+    for i in range(6):
+        if i == 0:
+            dict_color['FrontPunch'] = cm(1.*(i+1)/6)
+            dict_color['ElbowPunch'] = cm(1.*(i+1)/6)
+            dict_color['HookPunch'] = cm(1.*(i+1)/6)
+            ex_type['FrontPunch']='Upperbody Strength Training'
+            ex_type['ElbowPunch']='Upperbody Strength Training'
+            ex_type['HookPunch']='Upperbody Strength Training'
+        elif i == 1:
+            dict_color['SideLunges'] = (1.0,1.0,0.0,1.0)#cm(1.*(i+1)/6)
+            dict_color['Squat'] = (1.0,1.0,0.0,1.0) #cm(1.*(i+1)/6)
+            ex_type['SideLunges']='Lowerbody Strength Training'
+            ex_type['Squat']='Lowerbody Strength Training'
+        elif i == 2:
+            dict_color['Running'] = cm(1.*(i+1)/6)
+            dict_color['Shuffle'] = cm(1.*(i+1)/6)
+            ex_type['Running'] = 'Aerobic Exercise'
+            ex_type['Shuffle'] = 'Aerobic Exercise'
+        elif i==3:
+            dict_color['JumpingJack'] = cm(1.*(i+1)/6)
+            ex_type['JumpingJack']='Plyometric Exercise'
+        elif i==4:
+            dict_color['RonddeJambe'] = cm(1.*(i+1)/6)
+            ex_type['RonddeJambe'] = 'Stretching Exercise'
+        else:
+            dict_color['SlowSkater'] = cm(1.*(i+1)/6)
+            dict_color['LegBack'] = cm(1.*(i+1)/6)
+            dict_color['LegCross'] = cm(1.*(i+1)/6)
+            dict_color['KneeKick'] = cm(1.*(i+1)/6)
+            dict_color['HighKick'] = cm(1.*(i+1)/6)
+            dict_color['FrontKick'] = cm(1.*(i+1)/6)
+            ex_type['KneeKick']='Balance and Stability Exercise'
+            ex_type['HighKick']='Balance and Stability Exercise'
+            ex_type['FrontKick']='Balance and Stability Exercise'
+            ex_type['SlowSkater'] = 'Balance and Stability Exercise'
+            ex_type['LegBack'] = 'Balance and Stability Exercise'
+            ex_type['LegCross'] = 'Balance and Stability Exercise'
+
+    #dict_markers[names[i]] = markers[i%3]
         
     
-    #pdb.set_trace()
-    dict_of_muscles={}
-    dict_of_muscles[2108]='Cross Leg Front'
-    dict_of_muscles[2109]='Elbow Punch'
-    dict_of_muscles[2096]='Jumping Jack'
-    dict_of_muscles[2112]='Side Lunges'
-    dict_of_muscles[2110]='Side Shuffle'
-    dict_of_muscles[2104] = 'Slow Skater'
-    dict_of_muscles[2099] = 'Front Kick'
-    dict_of_muscles[2100] = 'Front Punch'
-    dict_of_muscles[2097] = 'High Kick'
-    dict_of_muscles[2101] = 'Hook Punch'
-    dict_of_muscles[2129] = 'Knee Kick'
-    dict_of_muscles[2098] = 'Leg Back'
-    dict_of_muscles[2113] = 'Running'
-    dict_of_muscles[2107] = 'Squats'
-    dict_of_muscles[2125] = 'Ball Throw'
-    dict_of_muscles[2111] = 'Baseball Bat'
-    dict_of_muscles[2126] = 'Bowling'
-    dict_of_muscles[2105] = 'Feet Cross'
-    dict_of_muscles[2103] = 'Pirouette'
-    dict_of_muscles[2131] = 'Woodchop'
     plt.figure()
     for i in range(X_2d.shape[0]):
         c = dict_color[list_of_class[i]]
-        mrk = dict_markers[list_of_class[i]]
-        plt.scatter(X_2d[i, 0], X_2d[i, 1], color=c, marker = mrk, label=list_of_class[i],s=12)
-    
+        plt.scatter(X_2d[i, 0], X_2d[i, 1], color=c, label=ex_type[list_of_class[i]],s=12)
+
     handles, labels = plt.gca().get_legend_handles_labels()
-    by_label = dict(zip(labels, handles))
-    newlabel = [dict_of_muscles[int(x)] for x in [*by_label]]
-    plt.legend(by_label.values(), newlabel,loc='center left', bbox_to_anchor=(1, 0.5))
+    by_label = OrderedDict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys(), loc='center left',bbox_to_anchor=(1, 0.5))
+    #plt.legend(by_label.values(), newlabel,loc='center left', bbox_to_anchor=(1, 0.5))
     print("here")
     
 
 
     listofkeys = [*by_label]
-    plt.savefig("testtsne_emg3.png", bbox_inches='tight')
+    plt.savefig("tsne_test_penult_2_chatgptfinal.png", bbox_inches='tight')
+    pdb.set_trace()
 
     plt.figure()
     for i in range(X_2d.shape[0]):
         c = dict_color[list_of_class[i]]
-        mrk = dict_markers[list_of_class[i]]
-        plt.scatter(X_2d_skeleton[i, 0], X_2d[i, 1], color=c, marker = mrk, label=list_of_class[i],s=12)
+        plt.scatter(X_2d_skeleton[i, 0], X_2d_skeleton[i, 1], color=c, label=ex_type[list_of_class[i]],s=12)
     handles, labels = plt.gca().get_legend_handles_labels()
-    by_label = dict(zip(labels, handles))
-    newlabel = [dict_of_muscles[int(x)] for x in [*by_label]]
-    #pdb.set_trace()
-    plt.legend(by_label.values(), newlabel,loc='center left', bbox_to_anchor=(1, 0.5))
+    by_label = OrderedDict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys(), loc='center left',bbox_to_anchor=(1, 0.5))
     
-    plt.savefig("testtsne_skeleton3.png", bbox_inches='tight')
+    plt.savefig("skeleton_chatgpt3.png", bbox_inches='tight')
     #pdb.set_trace()
     
     
@@ -339,10 +326,10 @@ if __name__ == '__main__':
     torch.multiprocessing.set_sharing_strategy('file_system')
     torch.cuda.empty_cache()
 
-    args = args.train_args()
+    args = args.inference_args()
     args.bs = 1
 
-    logger = logvis.MyLogger(args, context='train')
+    logger = logvis.MyLogger(args, args, context='train')
 
     try:
 

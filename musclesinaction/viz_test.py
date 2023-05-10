@@ -2,6 +2,7 @@
 Training + validation oversight and recipe configuration.
 '''
 
+
 # Internal imports.
 import numpy as np
 import torch 
@@ -24,6 +25,13 @@ import musclesinaction.models.model as model
 import vis.logvis as logvis
 import musclesinaction.utils.utils as utils
 import pipeline as pipeline
+
+torch.backends.cudnn.deterministic = True
+random.seed(1)
+torch.manual_seed(1)
+torch.cuda.manual_seed(1)
+np.random.seed(1)
+
 
 def _get_learning_rate(optimizer):
     for param_group in optimizer.param_groups:
@@ -57,35 +65,41 @@ def _inference_one_epoch(args, train_pipeline, phase, epoch, optimizer,
     else:
         data_loader = val_data_loader
     list_of_total_loss = []
+
     for cur_step, data_retval in enumerate(tqdm.tqdm(data_loader)):
 
-        if cur_step == 0:
-            logger.info(f'Enter first data loader iteration took {time.time() - start_time:.3f}s')
+        framelist = [data_retval['frame_paths'][i][0] for i in range(len(data_retval['frame_paths']))]
 
-        total_step = cur_step + total_step_base  # For continuity in wandb.
+        if 'Jo' in framelist[0] and 'SlowSkater' in framelist[0]:
 
-        try:
-            # First, address every example independently.
-            # This part has zero interaction between any pair of GPUs.
-            (model_retval, loss_retval) = train_pipeline[0](data_retval, cur_step, total_step)
-            ignoremovie = None
-            loss_retval = train_pipeline[1].process_entire_batch(
-                data_retval, model_retval, loss_retval, ignoremovie, cur_step, total_step)
-            total_loss = loss_retval['total']
-            print(total_loss)
-            list_of_total_loss.append(total_loss.item())
+            if cur_step == 0:
+                logger.info(f'Enter first data loader iteration took {time.time() - start_time:.3f}s')
 
-        except Exception as e:
-            num_exceptions += 1
-            if num_exceptions >= 7:
-                raise e
-            else:
-                logger.exception(e)
-                continue
+            total_step = cur_step + total_step_base  # For continuity in wandb.
+            try:
+                # First, address every example independently.
+                # This part has zero interaction between any pair of GPUs.
+                (model_retval, loss_retval) = train_pipeline[0](data_retval, cur_step, total_step)
+                ignoremovie = None
+                print(loss_retval)
+                loss_retval = train_pipeline[1].process_entire_batch(
+                    data_retval, model_retval, loss_retval, ignoremovie, cur_step, total_step)
+                total_loss = loss_retval['total']
+                print(total_loss)
+                list_of_total_loss.append(total_loss.item())
 
-        if phase=='eval':
-            #print("hi")
-            logger.handle_val_step(device, epoch, phase, cur_step, total_step, steps_per_epoch,data_retval, model_retval, loss_retval)
+            except Exception as e:
+                num_exceptions += 1
+                if num_exceptions >= 7:
+                    raise e
+                else:
+                    logger.exception(e)
+                    continue
+
+            if phase=='eval':
+                #print("hi")
+                logger.handle_val_step(device, epoch, phase, cur_step, total_step, steps_per_epoch,data_retval, model_retval, loss_retval,"original")
+                #pdb.set_trace()
 
 
     if phase == 'train':
@@ -240,7 +254,7 @@ if __name__ == '__main__':
 
     args = args.inference_args()
 
-    logger = logvis.MyLogger(args, context='train')
+    logger = logvis.MyLogger(args, args, context='train')
 
     try:
 

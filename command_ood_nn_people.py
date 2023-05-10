@@ -3,6 +3,9 @@ import pdb
 subject = "Sruthi"
 #exercises = os.listdir("SmallMIADataset/train/" + subject)
 import time
+
+
+
 command = 'tmux new-session -d -s my_session_clean_Ishaan \; send-keys \
 "conda activate /proj/vondrick4/mia/condaenvs/vibe-env2" Enter \; \
 send-keys "CUDA_VISIBLE_DEVICES=0 python musclesinaction/knnconvsingle.py \

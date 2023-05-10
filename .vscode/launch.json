@@ -51,7 +51,7 @@
             "name": "inference",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/musclesinaction/inference.py",
+            "program": "${workspaceFolder}/musclesinaction/viz_test.py",
             "args": [
                 "--name",
                 "dbg",

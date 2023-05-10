@@ -81,7 +81,7 @@ class TransformerEnc(nn.Module):
 
         # LAYERS
         self.positional_encoder = PositionalEncoding(
-            dim_model=126, dropout_p=dropout_p, max_len=int(step)
+            dim_model=126, dropout_p=dropout_p, max_len=30,
         )
 
         self.jointdim = nn.Linear(128, 8) #ALTERNATIVE
@@ -112,12 +112,13 @@ class TransformerEnc(nn.Module):
 
         src = torch.unsqueeze(src,dim=1).permute(0,1,3,2)
         
+        src = src[:,:,:,:]
         #pdb.set_trace()
-        src = self.conv1(src)[:,:,0,:].permute(0,2,1)
+        srcorig = self.conv1(src)[:,:,0,:].permute(0,2,1)
         
         #newcond = torch.unsqueeze(cond,dim=1).repeat(1,30,2).type(torch.cuda.FloatTensor)
         #pdb.set_trace()
-        src = self.positional_encoder(src)
+        src = self.positional_encoder(srcorig)
         condition=torch.ones(src.shape[0],src.shape[1],2).to(self.device)
         #condition = self.embedding(condval)
         #condition = condition.repeat(1,30,1)
