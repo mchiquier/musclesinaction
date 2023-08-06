@@ -2,16 +2,13 @@ import numpy as np
 import pdb
 import torch
 import musclesinaction.configs.args as args
-import vis.logvis as logvis
+import musclesinaction.vis.logvis as logvis
 import musclesinaction.dataloader.data as data
 import time
 import os
 import random
 import torch
 import tqdm
-import musclesinaction.models.modelbert as transmodel
-import musclesinaction.models.model as model
-import musclesinaction.models.basicconv as convmodel
 
 
 def perspective_projection(points, rotation, translation,
@@ -140,17 +137,10 @@ def main(args, logger):
             twodskeleton = data_retval['2dskeleton']
             emggroundtruth = data_retval['emg_values']
             exname = data_retval['frame_paths'][0][0].split("/")[8]
-            #pdb.set_trace()
-            #torch.unsqueeze(twodkpts.permute(0,2,1),dim=1)
-            #pdb.set_trace()
-            #emg_output = my_model(twodkpts)
-            #emg_output = emg_output.permute(0,2,1)
-            #pdb.set_trace()
+
             list_of_val_skeleton.append(threedskeleton.reshape(-1).numpy())
             list_of_val_emg.append(emggroundtruth.reshape(-1).numpy())
-            #list_of_val_emg.append(emggroundtruth.reshape(-1).numpy())
-            #list_of_val_skeleton.append(twodkpts.reshape(-1).numpy())
-
+          
         np_val_emg = np.array(list_of_val_emg)
         np_train_emg = np.array(list_of_train_emg)
         np_val_skeleton = np.array(list_of_val_skeleton)
@@ -163,26 +153,11 @@ def main(args, logger):
         ypred = nn.predict(np_val_skeleton)
         list_of_list_of_val_emg.append(np_val_emg)
         list_of_list_of_pred_emg.append(ypred)
-    gtemg = np.concatenate(list_of_list_of_val_emg,axis=0)
 
+    gtemg = np.concatenate(list_of_list_of_val_emg,axis=0)
     predemg = np.concatenate(list_of_list_of_pred_emg,axis=0)
     np.save(exname + "_final_dist.npy", predemg)
-    #msel = torch.nn.MSELoss()
-    #pdb.set_trace()
-    #print(torch.sqrt(msel(torch.tensor(gtemg),torch.tensor(predemg))))
-    #np.save(exname + "_final_error.npy", np.array([torch.sqrt(msel(torch.tensor(gtemg),torch.tensor(predemg))).item()]))
-    #print(torch.sqrt(msel(torch.tensor(gtemg),torch.tensor(predemg))))
-
-    #list_of_results.append(msel(torch.tensor(ypred)*100,torch.tensor(np_val_emg)*100).numpy())
-    #list_of_resultsnn.append(msel(torch.tensor(np_pred_emg)*100,torch.tensor(np_val_emg)*100).numpy())
-    #print(list_of_results)
-    #print(list_of_resultsnn)
-    #print(np.mean(np.array(list_of_results)))
-    #print(np.mean(np.array(list_of_resultsnn)))
-        
-        
-    #print(np.mean(np.sqrt(np.sum(np.square(ypred - np_val_emg), axis=1))), trainpath)
-    #pdb.set_trace()
+   
 
 #TRAIN SKELETON MATRIX FLATTENED OVER TIME 
 #TRAIN EMG MATRIX FLATTENED OVER TIME 

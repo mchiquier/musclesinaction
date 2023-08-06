@@ -2,16 +2,13 @@ import numpy as np
 import pdb
 import torch
 import musclesinaction.configs.args as args
-import vis.logvis as logvis
+import musclesinaction.vis.logvis as logvis
 import musclesinaction.dataloader.data as data
 import time
 import os
 import random
 import torch
 import tqdm
-import musclesinaction.models.modelbert as transmodel
-import musclesinaction.models.model as model
-import musclesinaction.models.basicconv as convmodel
 
 
 def perspective_projection(points, rotation, translation,
@@ -143,15 +140,9 @@ def main(args, logger):
                 threedskeleton = data_retval['3dskeleton']
                 twodskeleton = data_retval['2dskeleton']
                 emggroundtruth = data_retval['emg_values']
-                #pdb.set_trace()
-                #torch.unsqueeze(twodkpts.permute(0,2,1),dim=1)
-                #pdb.set_trace()
-                #emg_output = my_model(twodkpts)
-                #emg_output = emg_output.permute(0,2,1)
-                #pdb.set_trace()
+
                 list_of_val_skeleton.append(threedskeleton.reshape(-1).numpy())
                 list_of_val_emg.append(emggroundtruth.reshape(-1).numpy())
-                #list_of_val_skeleton.append(twodkpts.reshape(-1).numpy())
 
             np_val_emg = np.array(list_of_val_emg)
             np_train_emg = np.array(list_of_train_emg)
@@ -166,12 +157,17 @@ def main(args, logger):
             ypred = nn.predict(np_val_emg)
             list_of_list_of_val_pose.append(np_val_skeleton)
             list_of_list_of_pred_pose.append(ypred)
-    gtemg = np.concatenate(list_of_list_of_val_pose,axis=0)
-    predemg = np.concatenate(list_of_list_of_pred_pose,axis=0)
-    msel = torch.nn.MSELoss()
-    print(torch.sqrt(msel(torch.tensor(gtemg),torch.tensor(predemg))))
+    gtpose = np.concatenate(list_of_list_of_val_pose,axis=0)
+    predpose = np.concatenate(list_of_list_of_pred_pose,axis=0)
+
+    pdist = torch.nn.PairwiseDistance(p=2)
+    out = torch.mean(pdist(torch.tensor(gtpose).reshape(-1,3),torch.tensor(predpose).reshape(-1,3)))
+    print(out)
     pdb.set_trace()
-    print(torch.sqrt(msel(torch.tensor(gtemg),torch.tensor(predemg))))
+    #msel = torch.nn.MSELoss()
+    #print(torch.sqrt(msel(torch.tensor(gtemg),torch.tensor(predemg))))
+    #pdb.set_trace()
+    #print(torch.sqrt(msel(torch.tensor(gtemg),torch.tensor(predemg))))
 
     #list_of_results.append(msel(torch.tensor(ypred)*100,torch.tensor(np_val_emg)*100).numpy())
     #list_of_resultsnn.append(msel(torch.tensor(np_pred_emg)*100,torch.tensor(np_val_emg)*100).numpy())

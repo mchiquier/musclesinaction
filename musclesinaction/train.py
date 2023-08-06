@@ -10,19 +10,11 @@ import random
 import os
 import time
 import tqdm
-from pathlib import Path
-import pdb
 import musclesinaction.models.modelemgtopose as transmodelemgtopose
-import musclesinaction.models.model as transmodelposetoemg
-import musclesinaction.models.modelbert as transmodelbert
-import musclesinaction.models.basicconv as convmodel
-
+import musclesinaction.models.modelposetoemg as transmodelposetoemg
 import musclesinaction.configs.args as args
 import musclesinaction.dataloader.data as data
-import musclesinaction.losses.loss as loss
-import musclesinaction.models.model as model
 import vis.logvis as logvis
-import musclesinaction.utils.utils as utils
 import pipeline as pipeline
 
 def _get_learning_rate(optimizer):
@@ -199,32 +191,24 @@ def main(args, logger):
     # Instantiate networks.
    
 
-    if args.modelname == 'transf':
-        model_args = {'threed': args.threed,
-            'num_tokens': int(args.num_tokens),
-        'dim_model': int(args.dim_model),
-        'num_classes': int(args.num_classes),
-        'num_heads': int(args.num_heads),
-        'classif': args.classif,
-        'num_encoder_layers':int(args.num_encoder_layers),
-        'num_decoder_layers':int(args.num_decoder_layers),
-        'dropout_p':float(args.dropout_p),
-        'device': args.device,
-        'embedding': args.embedding,
-        'step': int(args.step)}
-        if args.predemg == 'True':
-            model = transmodelposetoemg.TransformerEnc(**model_args)
-        else:
-            model = transmodelemgtopose.TransformerEnc(**model_args)
-    elif args.modelname == 'old':
-        model_args = {
-        'device': args.device}
-        model = convmodel.OldBasicConv(**model_args)
+    
+    model_args = {'threed': args.threed,
+        'num_tokens': int(args.num_tokens),
+    'dim_model': int(args.dim_model),
+    'num_classes': int(args.num_classes),
+    'num_heads': int(args.num_heads),
+    'classif': args.classif,
+    'num_encoder_layers':int(args.num_encoder_layers),
+    'num_decoder_layers':int(args.num_decoder_layers),
+    'dropout_p':float(args.dropout_p),
+    'device': args.device,
+    'embedding': args.embedding,
+    'step': int(args.step)}
+    if args.predemg == 'True':
+        model = transmodelposetoemg.TransformerEnc(**model_args)
     else:
-        model_args = {
-        'device': args.device}
-        model = convmodel.BasicConv(**model_args)
-
+        model = transmodelemgtopose.TransformerEnc(**model_args)
+    
     # Bundle networks into a list.
     networks = [model]
     for i in range(len(networks)):

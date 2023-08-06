@@ -2,16 +2,14 @@ import numpy as np
 import pdb
 import torch
 import musclesinaction.configs.args as args
-import vis.logvis as logvis
+import musclesinaction.vis.logvis as logvis
 import musclesinaction.dataloader.data as data
 import time
 import os
 import random
 import torch
 import tqdm
-import musclesinaction.models.modelbert as transmodel
-import musclesinaction.models.model as model
-import musclesinaction.models.basicconv as convmodel
+
 
 
 def perspective_projection(points, rotation, translation,
@@ -153,9 +151,15 @@ def main(args, logger):
     print("here")
     
     ypred = nn.predict(np_val_emg)
-    msel = torch.nn.MSELoss()
-    print(torch.sqrt(msel(torch.tensor(ypred),torch.tensor(np_val_skeleton))))
+
+    pdist = torch.nn.PairwiseDistance(p=2)
+    out = torch.mean(pdist(torch.tensor(ypred).reshape(-1,3),torch.tensor(np_val_skeleton).reshape(-1,3)))
+    print(out)
     pdb.set_trace()
+    
+    #msel = torch.nn.MSELoss()
+    #print(torch.sqrt(msel(torch.tensor(ypred),torch.tensor(np_val_skeleton))))
+    
     #list_of_results.append(msel(torch.tensor(ypred)*100,torch.tensor(np_val_emg)*100).numpy())
     #list_of_resultsnn.append(msel(torch.tensor(np_pred_emg)*100,torch.tensor(np_val_emg)*100).numpy())
     #print(list_of_results)

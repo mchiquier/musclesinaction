@@ -9,8 +9,6 @@ import math
 import numpy as np
 
 # Internal imports.
-import utils
-
 
 import torch
 import torch.nn as nn
@@ -18,7 +16,6 @@ import torch.optim as optim
 import random
 import math
 import numpy as np
-import pdb
 
 class PositionalEncoding(nn.Module):
     def __init__(self, dim_model, dropout_p, max_len):

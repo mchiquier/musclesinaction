@@ -2,18 +2,15 @@ import numpy as np
 import pdb
 import torch
 import musclesinaction.configs.args as args
-import vis.logvis as logvis
+import musclesinaction.vis.logvis as logvis
 import musclesinaction.dataloader.data as data
 import time
 import os
 import random
 import torch
 import musclesinaction.models.modelemgtopose as transmodelemgtopose
-import musclesinaction.models.model as transmodelposetoemg
+import musclesinaction.models.modelposetoemg as transmodelposetoemg
 import tqdm
-import musclesinaction.models.modelbert as transmodel
-import musclesinaction.models.model as model
-import musclesinaction.models.basicconv as convmodel
 
 
 def perspective_projection(points, rotation, translation,
@@ -107,31 +104,23 @@ def main(args, logger):
     logger.info('Checkpoint path: ' + args.checkpoint_path)
     os.makedirs(args.checkpoint_path, exist_ok=True)
 
-    if args.modelname == 'transf':
-        model_args = {'threed': args.threed,
-            'num_tokens': int(args.num_tokens),
-        'dim_model': int(args.dim_model),
-        'num_classes': int(args.num_classes),
-        'num_heads': int(args.num_heads),
-        'classif': args.classif,
-        'num_encoder_layers':int(args.num_encoder_layers),
-        'num_decoder_layers':int(args.num_decoder_layers),
-        'dropout_p':float(args.dropout_p),
-        'device': args.device,
-        'embedding': args.embedding,
-        'step': int(args.step)}
-        if args.predemg == 'True':
-            my_model = transmodelposetoemg.TransformerEnc(**model_args)
-        else:
-            my_model = transmodelemgtopose.TransformerEnc(**model_args)
-    elif args.modelname == 'old':
-        model_args = {
-        'device': args.device}
-        my_model = convmodel.OldBasicConv(**model_args)
+    model_args = {'threed': args.threed,
+        'num_tokens': int(args.num_tokens),
+    'dim_model': int(args.dim_model),
+    'num_classes': int(args.num_classes),
+    'num_heads': int(args.num_heads),
+    'classif': args.classif,
+    'num_encoder_layers':int(args.num_encoder_layers),
+    'num_decoder_layers':int(args.num_decoder_layers),
+    'dropout_p':float(args.dropout_p),
+    'device': args.device,
+    'embedding': args.embedding,
+    'step': int(args.step)}
+    if args.predemg == 'True':
+        my_model = transmodelposetoemg.TransformerEnc(**model_args)
     else:
-        model_args = {
-        'device': args.device}
-        my_model = convmodel.BasicConv(**model_args)
+        my_model = transmodelemgtopose.TransformerEnc(**model_args)
+    
 
     if args.resume:
         logger.info('Loading weights from: ' + args.resume)

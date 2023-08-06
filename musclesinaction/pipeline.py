@@ -9,7 +9,6 @@ import torch.nn.functional as F
 import time
 # Internal imports.
 import musclesinaction.losses.loss as loss
-import musclesinaction.utils.utils as utils
 
 
 class MyTrainPipeline(torch.nn.Module):

@@ -13,21 +13,12 @@ import tqdm
 from pathlib import Path
 import pdb
 import musclesinaction.models.modelemgtopose as transmodelemgtopose
-import musclesinaction.models.model as transmodelposetoemg
-import musclesinaction.models.modelbert as transmodelbert
-import musclesinaction.models.basicconv as convmodel
+import musclesinaction.models.modelposetoemg as transmodelposetoemg
 
 import musclesinaction.configs.args as args
 import musclesinaction.dataloader.data as data
-import musclesinaction.losses.loss as loss
-import musclesinaction.models.model as model
 import vis.logvis as logvis
-import musclesinaction.utils.utils as utils
 import pipeline as pipeline
-
-def _get_learning_rate(optimizer):
-    for param_group in optimizer.param_groups:
-        return param_group['lr']
 
 
 def _inference_one_epoch(args, train_pipeline, phase, train_data_loader, val_data_loader,device, loggerone, loggertwo):

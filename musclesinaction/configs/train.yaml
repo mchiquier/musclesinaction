@@ -42,5 +42,5 @@ modelname: 'transf'
 l1_lw: 1.0
 gradient_clip: 0.0
 optim: 'adam'
-data_path_train: '../../../vondrick/mia/VIBE/generalizationFinal/train.txt'
-data_path_val: '../../../vondrick/mia/VIBE/generalizationFinal/val.txt' #'../../../vondrick/mia/VIBE/correctsruthioodfiles/sruthi_cond_ood_valrest_LegBack.txt'
+data_path_train: 'datasetsplits/train.txt'
+data_path_val: 'datasetsplits/val.txt' #'../../../vondrick/mia/VIBE/correctsruthioodfiles/sruthi_cond_ood_valrest_LegBack.txt'

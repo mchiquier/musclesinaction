@@ -5,16 +5,17 @@ Data loading and processing logic.
 import numpy as np
 import random
 import musclesinaction.utils.augs as augs
-import utils
-import pdb
 import torch
 import os
-import pathlib
-import cv2
+
 import matplotlib.pyplot as plt
-import joblib
 from matplotlib import animation
-import time
+
+torch.backends.cudnn.deterministic = True
+random.seed(1)
+torch.manual_seed(1)
+torch.cuda.manual_seed(1)
+np.random.seed(1)
 
 def _read_image_robust(img_path, no_fail=False):
     '''
@@ -63,7 +64,9 @@ def create_train_val_data_loaders(args, logger):
     #my_transform = augs.get_train_transform(args.image_dim)
     dset_args = dict()
     dset_args['percent'] = args.percent
+    dset_args['std'] = args.std
     dset_args['step'] = int(args.step)
+    dset_args['cond'] = args.cond
     #dset_args['transform'] = my_transform
 
     train_dataset = MyMuscleDataset(
@@ -77,6 +80,7 @@ def create_train_val_data_loaders(args, logger):
     val_aug_loader = torch.utils.data.DataLoader(
     val_aug_dataset, batch_size=args.bs, num_workers=args.num_workers,
     shuffle=True, worker_init_fn=_seed_worker, drop_last=True, pin_memory=False)
+
 
     #first = int(len(dataset)*0.8)
     #second = len(dataset) - first
@@ -96,7 +100,9 @@ def create_val_data_loaders(args, logger):
     #my_transform = augs.get_train_transform(args.image_dim)
     dset_args = dict()
     dset_args['percent'] = args.percent
+    dset_args['std'] = args.std
     dset_args['step'] = int(args.step)
+    dset_args['cond'] = args.cond
     #dset_args['transform'] = my_transform
     #validations = os.listdir(args.data_path_val)
     
@@ -136,7 +142,7 @@ class MyMuscleDataset(torch.utils.data.Dataset):
     dataset.
     '''
 
-    def __init__(self, dataset_root, logger, phase, percent,  step,transform=None):
+    def __init__(self, dataset_root, logger, phase, percent,  step, std, cond, transform=None):
         '''
         :param dataset_root (str): Path to dataset (with or without phase).
         :param logger (MyLogger).
@@ -151,23 +157,21 @@ class MyMuscleDataset(torch.utils.data.Dataset):
             phase_dir = dataset_root
             #dataset_root = str(pathlib.Path(dataset_root).parent)
 
-        # Load all file paths beforehand.
-        # NOTE: This method call handles subdirectories recursively, but also creates extra files.
-        #all_files = utils.cached_listdir(phase_dir, allow_exts=['jpg', 'jpeg', 'png'],
-        #                                 recursive=True)
         self.phase = phase
         with open(dataset_root) as f:
             lines = f.readlines()
             self.all_files = lines
             file_count = len(self.all_files)
-            print('Image file count:', file_count)
+            print('File count:', file_count)
             self.dset_size = file_count
             self.file_count = file_count
 
+        self.std = std
         self.dataset_root = dataset_root
         self.logger = logger
         self.phase = phase
         self.phase_dir = phase_dir
+        self.cond = cond
         self.transform = transform
         self.percent = float(percent)
         self.step = int(step)
@@ -176,71 +180,7 @@ class MyMuscleDataset(torch.utils.data.Dataset):
         self.log_dir = 'training_viz_digitized'
         self.plot = False
         self.muscles=['rightquad','leftquad','rightham','leftham','rightglutt','leftglutt','leftbicep','rightbicep']
-        self.subjects = os.listdir("../../../vondrick/mia/VIBE/MIADataset/") 
-        self.exercisessamir=os.listdir("../../../vondrick/mia/VIBE/MIADataset/Samir") 
-        self.exercisessonia=os.listdir("../../../vondrick/mia/VIBE/MIADataset/Sonia") 
-        self.exercisessruthi=os.listdir("../../../vondrick/mia/VIBE/MIADataset/Sruthi")
-        self.exercisessruthi=os.listdir("../../../vondrick/mia/VIBE/MIADataset/Ishaan") 
-        #self.videos = ['IMG_squatright_30.MOV', 'IMG_squatwrong_30.MOV']
-        #self.videos = ['IMG_2403_30.MOV','IMG_2411_30.MOV','IMG_2412_30.MOV', 'IMG_2414_30.MOV',
-        #'IMG_2415_30.MOV']
-        """self.videos = ['IMG_2096_30.MOV','IMG_2097_30.MOV','IMG_2099_30.MOV','IMG_2100_30.MOV','IMG_2101_30.MOV',
-        'IMG_2104_30.MOV','IMG_2105_30.MOV','IMG_2108_30.MOV','IMG_2109_30.MOV','IMG_2110_30.MOV',
-        'IMG_2111_30.MOV','IMG_2112_30.MOV','IMG_2125_30.MOV','IMG_2129_30.MOV','IMG_2098_30.MOV',
-        'IMG_2103_30.MOV','IMG_2107_30.MOV','IMG_2113_30.MOV','IMG_2126_30.MOV','IMG_2131_30.MOV']"""
-        """self.videos = ['IMG_2419_30.MOV','IMG_2420_30.MOV','IMG_2422_30.MOV', 'IMG_2404_30.MOV',
-        'IMG_2426_30.MOV','IMG_2405_30.MOV','IMG_2409_30.MOV','IMG_2410_30.MOV',
-        'IMG_2411_30.MOV','IMG_2412_30.MOV','IMG_2403_30.MOV','IMG_2413_30.MOV',
-        'IMG_2414_30.MOV','IMG_2424_30.MOV','IMG_2415_30.MOV','IMG_2406_30.MOV',
-        'IMG_2407_30.MOV','IMG_2408_30.MOV','IMG_2416_30.MOV','IMG_2423_30.MOV',
-        'IMG_2425_30.MOV'] """
-        """self.videos = ['IMG_2478_30.MOV','IMG_2479_30.MOV','IMG_2480_30.MOV',
-        'IMG_2487_30.MOV','IMG_2488_30.MOV','IMG_2489_30.MOV','IMG_2490_30.MOV',
-        'IMG_2471_30.MOV','IMG_2472_30.MOV','IMG_2473_30.MOV','IMG_2474_30.MOV',
-        'IMG_2483_30.MOV','IMG_2484_30.MOV','IMG_2485_30.MOV','IMG_2486_30.MOV']"""
-        self.pickledict = {}
-        
-        for elem in self.exercisessamir:
-            print(elem)
-            if ".py" not in elem:
-                self.pickledict["Samir/" + elem] = joblib.load('../../../vondrick/mia/VIBE/MIADataset/Samir/' + elem + '/vibe_output_30.pkl')#filepath[1]) 
-        #self.pathtopklone = '../../../vondrick/mia/VIBE/' + 'output/IMG_1196_30.MOV/vibe_output.pkl'#filepath[1]
-        for elem in self.exercisessonia:
-            print(elem)
-            if ".py" not in elem:
-                self.pickledict["Sonia/" + elem] = joblib.load('../../../vondrick/mia/VIBE/MIADataset/Sonia/' + elem + '/vibe_output_30.pkl')
 
-        for elem in self.exercisessruthi:
-            print(elem)
-            if ".py" not in elem:
-                self.pickledict["Sruthi/" + elem] = joblib.load('../../../vondrick/mia/VIBE/MIADataset/Sruthi/' + elem + '/vibe_output_30.pkl')
-
-        for elem in self.exercisessruthi:
-            print(elem)
-            if ".py" not in elem:
-                self.pickledict["Ishaan/" + elem] = joblib.load('../../../vondrick/mia/VIBE/MIADataset/Ishaan/' + elem + '/vibe_output_30.pkl')
-        #self.pathtopkltwo = '../../../vondrick/mia/VIBE/' + 'output/IMG_1197_30.MOV/vibe_output.pkl'#filepath[1]
-        #self.pathtopkthree = '../../../vondrick/mia/VIBE/' + 'output/IMG_1203_30.MOV/vibe_output.pkl'#filepath[1]
-        #self.pathtopkfour = '../../../vondrick/mia/VIBE/' + 'output/IMG_1902_30.MOV/vibe_output.pkl'#filepath[1]
-        #self.pathtopkfive = '../../../vondrick/mia/VIBE/' + 'output/IMG_1903_30.MOV/vibe_output.pkl'#filepath[1]
-        #self.pathtopksix = '../../../vondrick/mia/VIBE/' + 'output/IMG_1905_30.MOV/vibe_output.pkl'#filepath[1]
-        #self.pathtopkseven = '../../../vondrick/mia/VIBE/' + 'output/IMG_1906_30.MOV/vibe_output.pkl'#filepath[1]
-        #self.pathtopkeight = '../../../vondrick/mia/VIBE/' + 'output/IMG_1919_30.MOV/vibe_output.pkl'#filepath[1]
-        #self.pathtopknine = '../../../vondrick/mia/VIBE/' + 'output/IMG_1918_30.MOV/vibe_output.pkl'#filepath[1]
-        #self.pathtopkten = '../../../vondrick/mia/VIBE/' + 'output/IMG_1920_30.MOV/vibe_output.pkl'#filepath[1]
-        #self.pathtopkeleven= '../../../vondrick/mia/VIBE/' + 'output/IMG_1921_30.MOV/vibe_output.pkl'#filepath[1]
-        
-        """self.totalone = joblib.load(self.pathtopklone)
-        self.totaltwo = joblib.load(self.pathtopkltwo)
-        self.totalthree = joblib.load(self.pathtopkthree)
-        self.totalfour = joblib.load(self.pathtopkfour)
-        self.totalfive = joblib.load(self.pathtopkfive)
-        self.totalsix = joblib.load(self.pathtopksix)
-        self.totalseven = joblib.load(self.pathtopkseven)
-        self.totaleight = joblib.load(self.pathtopkeight)
-        self.totalnine = joblib.load(self.pathtopknine)
-        self.totalten = joblib.load(self.pathtopkten)
-        self.totaleleven = joblib.load(self.pathtopkeleven)"""
 
     def __len__(self):
         return int((self.dset_size)*self.percent)
@@ -277,191 +217,111 @@ class MyMuscleDataset(torch.utils.data.Dataset):
         FFwriter = animation.FFMpegWriter(fps=10, extra_args=['-vcodec', 'h264_v4l2m2m'])
         line_ani.save(current_path + "/" + str(part) + '_emg.mp4')
 
-    def visualize_video(self,index):
-        #index = 5100
-        current_path = self.log_dir + "/" + str(index)
-        cur = time.time()
-        os.makedirs(current_path, 0o777, exist_ok=True)
-        file_idx = index
-        filepath = self.all_files[file_idx].split(",")
-        cur2 = time.time()
-        #print(cur2-cur, "1")
-        cur = cur2
-        
-        pathtoframes = '../../../vondrick/mia/VIBE/' + filepath[0]
-        #print(filepath[0],filepath[1])
-        
-        cur2 = time.time()
-        #print(cur2-cur, "2")
-        cur = cur2
-        list_of_emg_values_rightquad = []
-        list_of_emg_values_rightham = []
-        list_of_emg_values_rightbicep = []
-        list_of_emg_values_leftquad = []
-        list_of_emg_values_leftham = []
-        list_of_emg_values_leftbicep = []
-        list_of_emg_values_righttricep = []
-        list_of_emg_values_lefttricep = []
-        list_of_2d_joints = []
-        list_of_3d_joints = []
-        list_of_frames = []
-        list_of_bboxes = []
-        list_of_predcam = []
-        list_of_frame_paths = []
-        list_of_orig_cam = []
-        list_of_verts = []
-        filepath = self.all_files[index].split(",")
-        for i in range(self.step):
-            frame1=pathtoframes + "/" + filepath[2+i*17].zfill(6) + ".png"
-            frame2=pathtoframes +  "/" + filepath[3+i*17].zfill(6) + ".png"
-            frame3=pathtoframes +  "/" + filepath[4+i*17].zfill(6) + ".png"
-            list_of_frame_paths.append(frame1)
-            pickleframe1= int(filepath[5+i*17].split("/")[-1])
-            pickleframe2=int(filepath[6+i*17].split("/")[-1])
-            pickleframe3=int(filepath[7+i*17].split("/")[-1])
-            emgvalues = filepath[8+i*17:17+i*17]
-            emgvalues[-1] = emgvalues[-1].split("\n")[0]
-            list_of_emg_values_rightquad.append(float(emgvalues[0]))
-            list_of_emg_values_rightham.append(float(emgvalues[2]))
-            list_of_emg_values_rightbicep.append(float(emgvalues[4]))
-
-            list_of_emg_values_leftquad.append(float(emgvalues[1]))
-            list_of_emg_values_leftham.append(float(emgvalues[3]))
-            list_of_emg_values_leftbicep.append(float(emgvalues[5]))
-
-            list_of_emg_values_righttricep.append(float(emgvalues[6]))
-            list_of_emg_values_lefttricep.append(float(emgvalues[7]))
-
-            total = self.pickledict[pathtoframes.split("/")[-3] + "/" +pathtoframes.split("/")[-2]]
-            
-            """if '1197' in pathtoframes:
-                total = self.totaltwo
-            if '1196' in pathtoframes:
-                total = self.totalone
-            if '1203' in pathtoframes:
-                total = self.totalthree
-            if '1902' in pathtoframes:
-                total = self.totalfour
-            if '1903' in pathtoframes:
-                total = self.totalfive
-            if '1905' in pathtoframes:
-                total = self.totalsix
-            if '1906' in pathtoframes:
-                total = self.totalseven
-            if '1919' in pathtoframes:
-                total = self.totaleight
-            if '1918' in pathtoframes:
-                total = self.totalnine
-            if '1920' in pathtoframes:
-                total = self.totalten
-            if '1921' in pathtoframes:
-                total = self.totaleleven"""
-            
-            
-            firstjoints2dframe= total[1]['joints2d_img_coord'][pickleframe1]
-            list_of_2d_joints.append(firstjoints2dframe)
-            second2djoints2dframe = total[1]['joints2d_img_coord'][pickleframe2]
-            third2djoints2dframe = total[1]['joints2d_img_coord'][pickleframe3]
-
-            origcam = total[1]['orig_cam'][pickleframe1]
-            verts = total[1]['verts'][pickleframe1]
-            list_of_orig_cam.append(origcam)
-            list_of_verts.append(verts)
-            firstjoints3dframe= total[1]['joints3d'][pickleframe1]
-            firstbboxes= total[1]['bboxes'][pickleframe1]
-            firstpredcam = total[1]['pred_cam'][pickleframe1]
-            list_of_3d_joints.append(firstjoints3dframe)
-            list_of_bboxes.append(firstbboxes)
-            list_of_predcam.append(firstpredcam)
-            second2djoints3dframe = total[1]['joints3d'][pickleframe2]
-            third2djoints3dframe = total[1]['joints3d'][pickleframe3]
-            #if i==0:
-                #cur2 = time.time()
-                #print(cur2-cur,(cur2-cur)*30, "3")
-                #cur = cur2
-            """if self.phase != 'train':
-                img=cv2.imread(frame1)
-                img = img[...,::-1]
-                list_of_frames.append(img)"""
-            
-            if self.plot:
-                plt.figure()
-                plt.imshow(img)
-                plt.scatter(firstjoints2dframe[:,0],firstjoints2dframe[:,1],s=40)
-                plt.savefig(current_path + "/" + str(index+i) + ".png")
-
-        emg_values = [list_of_emg_values_rightquad,list_of_emg_values_rightham,
-        list_of_emg_values_rightbicep,list_of_emg_values_righttricep,list_of_emg_values_leftquad,
-        list_of_emg_values_leftham,list_of_emg_values_leftbicep,list_of_emg_values_lefttricep]
-
-        #emg_values = [list_of_emg_values_rightquad,list_of_emg_values_rightham,
-        #list_of_emg_values_leftquad,list_of_emg_values_leftham]
-
-        digitized_emg_values=[]
-
-        cur2 = time.time()
-        #print(cur2-cur, "4")
-        cur = cur2
-        for muscle in emg_values:
-            digitized_emg_values.append(np.digitize(muscle,self.bins))
-        
-        cur2 = time.time()
-        #print(cur2-cur, "5")
-        cur = cur2
-
-        #emg_values.pop(5)
-        #emg_values.pop(1)
-        return (emg_values,list_of_2d_joints, list_of_3d_joints, list_of_frame_paths, list_of_bboxes, list_of_predcam, list_of_orig_cam, list_of_verts)
-
+    
     def __getitem__(self, index):
         
-        cur = time.time()
-        (list_of_emg_values, twod_joints, list_of_threed_joints, list_of_frame_paths, list_of_bboxes, list_of_predcam,
-        list_of_orig_cam, list_of_verts) = self.visualize_video(index)
-        cur2 = time.time()
-        #print(cur2-cur,"0")
-        cur = cur2
-        #list_of_frames=np.array(list_of_frames)
-        person = list_of_frame_paths[0].split("MIADataset/")[1].split("/")[0]
-        if person == 'Samir':
-            condval = np.array([0.9])
-        elif person == 'Sonia':
-            condval = np.array([0.6])
-        elif person == "Sruthi":
-            condval = np.array([0.3])
+        filepath = self.all_files[index].split("\n")[0]
+        if self.std == "True":
+            emg_values = np.load("../../../vondrick/mia/VIBE/" + filepath + "/emgvaluesstd.npy")
+        else:
+            emg_values = np.load("../../../vondrick/mia/VIBE/" + filepath + "/emgvalues.npy")
+        twod_joints = np.load("../../../vondrick/mia/VIBE/" + filepath + "/joints2d.npy")
+        threed_joints = np.load("../../../vondrick/mia/VIBE/" + filepath + "/joints3d.npy")
+        predcam = np.load("../../../vondrick/mia/VIBE/" + filepath + "/predcam.npy")
+        origcam = np.load("../../../vondrick/mia/VIBE/" + filepath + "/origcam.npy")
+        bboxes = np.load("../../../vondrick/mia/VIBE/" + filepath + "/bboxes.npy")
+        pose = np.load("../../../vondrick/mia/VIBE/" + filepath + "/pose.npy")
+        twodskeletonsmpl = np.load("../../../vondrick/mia/VIBE/" + filepath + "/joints2dsmpl.npy")
+        betas = np.load("../../../vondrick/mia/VIBE/" + filepath + "/betas.npy")
+        verts = np.load("../../../vondrick/mia/VIBE/" + filepath + "/verts.npy")
+
+        file = open("../../../vondrick/mia/VIBE/" + filepath + "/frame_paths.txt", 'r')
+        line = file.readlines()[0]
+        frame_paths = line.rstrip().split(',')
+            
+        person = filepath.split("/")[2]
+
+        if person == 'David':
+            themax = np.array([226.0,159.0,283.0,233.0,406.0,139.0,276.0,235.0])
+            themin = np.array([7.0,8.0,9.0,2.0,9.0,10.0,8.0,2.0])
+        elif person == 'Ishaan':
+            themax = np.array([355.0,231.0,242.0,128.0,473.0,183.0,197.0,98.0])
+            themin = np.array([3.0,2.0,2.0,2.0,2.0,3.0,2.0,2.0])
+        elif person == "Jo":
+            themax = np.array([119.0,178.0,83.0,102.0,176.0,106.0,95.0,75.0])
+            themin = np.array([2.0,2.0,2.0,1.0,4.0,3.0,2.0,1.0])
+        elif person == "Jonny":
+            themax = np.array([207.0,97.0,154.0,112.0,182.0,122.0,176.0,123.0])
+            themin = np.array([2.0,3.0,2.0,1.0,3.0,3.0,3.0,2.0])
+        elif person == "Lionel":
+            themax = np.array([177.0,125.0,85.0,167.0,176.0,110.0,130.0,199.0])
+            themin = np.array([2.0,3.0,0.0,1.0,1.0,2.0,2.0,3.0])
+        elif person == "Me":
+            themax = np.array([213.0,115.0,192.0,128.0,207.0,147.0,218.0,114.0])
+            themin = np.array([2.0,1.0,2.0,1.0,2.0,2.0,4.0,1.0])
+        elif person == "Samir":
+            themax = np.array([289.0,141.0,116.0,179.0,452.0,174.0,135.0,177.0])
+            themin = np.array([1.0,3.0,2.0,7.0,2.0,1.0,3.0,4.0])
+        elif person == "Serena":
+            themax = np.array([177.0,120.0,175.0,146.0,147.0,94.0,243.0,209.0])
+            themin = np.array([3.0,2.0,2.0,6.0,2.0,0.0,2.0,6.0])
+        elif person == "Sonia":
+            themax = np.array([154.0,53.0,74.0,102.0,183.0,59.0,152.0,135.0])
+            themin = np.array([2.0,3.0,2.0,2.0,3.0,1.0,2.0,2.0])
+        else:
+            themax = np.array([174.0,134.0,125.0,151.0,170.0,161.0,119.0,137.0])
+            themin = np.array([3.0,14.0,4.0,3.0,7.0,5.0,8.0,5.0])
+
+        if self.cond=='True':
+            if person == 'David':
+                condval = np.array([1.0])
+                condvalbad = np.array([0.1])
+            elif person == 'Ishaan':
+                condval = np.array([0.9]) 
+                condvalbad = np.array([0.3])
+            elif person == "Jo":
+                condval = np.array([0.8]) 
+                condvalbad = np.array([0.6])
+            elif person == "Jonny":
+                condval = np.array([0.7])
+                condvalbad = np.array([0.6]) 
+            elif person == "Lionel":
+                condval = np.array([0.6])
+                condvalbad = np.array([0.1]) 
+            elif person == "Me":
+                condval = np.array([0.5])
+                condvalbad = np.array([0.6]) 
+            elif person == "Samir":
+                condval = np.array([0.4])
+                condvalbad = np.array([0.6]) 
+            elif person == "Serena":
+                condval = np.array([0.3])
+                condvalbad = np.array([0.6]) 
+            elif person == "Sonia":
+                condval = np.array([0.2])
+                condvalbad = np.array([0.6]) 
+            else:
+                condval = np.array([0.1]) 
+                condvalbad = np.array([0.9]) 
         else:
             condval = np.array([0.1])
-        twod_joints=np.array(twod_joints)
-        bboxes = np.array(list_of_bboxes)
-        predcam = np.array(list_of_predcam)
-        threed_joints=np.array(list_of_threed_joints)
-        #twod_joints = twod_joints.reshape(twod_joints.shape[0],-1)
-        emg_values_right_quad = np.array(list_of_emg_values)[0]
-        bined_right_quad = np.digitize(emg_values_right_quad,self.bins)
-        emg_values_left_quad = np.array(list_of_emg_values)[0]
-        bined_left_quad = np.digitize(emg_values_left_quad,self.bins)
-
-        # Return results.
-        cur2 = time.time()
-        #print(cur2-cur,"1")
-        name = list_of_frame_paths[0].split("/")[-2].split("_")[1]
-        if name[2] == '4':
-            cond = np.array([0.0]) 
-        else:
-            cond = np.array([1.0])
-        
-        cur = cur2
+            condvalbad = np.array([0.9])
+           
         result = {'condval':condval,
-                  'emg_values': np.array(list_of_emg_values),
-                  'orig_cam': np.array(list_of_orig_cam),
-                  'verts':np.array(list_of_verts),
-                  '2dskeleton': twod_joints,
-                  'cond': cond,
-                  '3dskeleton': threed_joints[:,:25,:],
+                'condvalbad':condvalbad,
+                'max': themax,
+                'min':themin,
+                  'emg_values': emg_values.transpose(1,0),
+                  'predcam': predcam,
+                  'origcam': origcam,
                   'bboxes': bboxes,
-                  'predcam': predcam}
-                  #'frames': list_of_frames,
-                  #'frame_paths': list_of_frame_paths[0],
-                  #'bins': np.linspace(0, self.maxemg, 20
+                  'pose':pose,
+                  'betas': betas,
+                  'verts': verts,
+                  '2dskeletonsmpl': twodskeletonsmpl,
+                  '2dskeleton': twod_joints[:,:25,:],
+                  '3dskeleton': threed_joints[:,:25,:],
+                  'frame_paths': frame_paths,
+                  'indexpath': filepath.split("/")[-1]}
         return result
 

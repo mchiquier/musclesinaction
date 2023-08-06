@@ -751,13 +751,14 @@ class MyLogger(logvisgen.Logger):
                     
 
                     framelist = [data_retval['frame_paths'][i][j] for i in range(len(data_retval['frame_paths']))]
-                    movie = framelist[0].split("/")[-4] + "/" + framelist[0].split("/")[-3]
+                    filepath = data_retval['filepath']
+                    movie = filepath.split("/")[-2] + filepath.split("/")[-1]#framelist[0].split("/")[-4] + "/" + framelist[0].split("/")[-3]
                     #pdb.set_trace()
                     
                     
                     #current_path = "../../../../local/vondrick/mia/muscleresults/" + self.args.name + '_' + phase + '_viz_digitized/' + movie + "/" + str(cur_step) + "/" + str(j)
-                    current_path = "../../../vondrick4/www-data/mia/muscleresults/" + self.args.name + '_' + phase + '_viz_digitized/' + movie + "/" + str(cur_step) + "/" + str(j)
-                    current_path_parent = "../../../vondrick4/www-data/mia/muscleresults/" + self.args.name + '_' + phase + '_viz_digitized/' + movie + "/"
+                    current_path = "muscleresults/" + self.args.name + '_' + phase + '_viz_digitized/' + movie + "/" + str(cur_step) + "/" + str(j)
+                    current_path_parent = "muscleresults/" + self.args.name + '_' + phase + '_viz_digitized/' + movie + "/"
 
                     #current_path_parent = "../../../../local/vondrick/muscleresults/" + self.args.name + '_' + phase + '_viz_digitized/' + movie + "/"
                     
@@ -817,9 +818,11 @@ class MyLogger(logvisgen.Logger):
                         #pdb.set_trace()
                     else:
                         framelist = [data_retval['frame_paths'][i][0] for i in range(len(data_retval['frame_paths']))]
-                        movie = framelist[0].split("/")[-4] + "/" + framelist[0].split("/")[-3]
+                        filepath = data_retval['filepath']
+                        movie = filepath.split("/")[-2] + filepath.split("/")[-1]#framelist[0].split("/")[-4] + "/" + framelist[0].split("/")[-3]
+                        #movie = framelist[0].split("/")[-4] + "/" + framelist[0].split("/")[-3]
                         #current_path = "../../../../local/vondrick/mia/muscleresults/" + self.args.name + '_' + phase + '_viz_digitized/' + movie + "/" + str(cur_step) + "/" + str(0) + "/gt" + flag + "/"
-                        current_path = "../../../vondrick4/www-data/mia/muscleresults/" + self.args.name + '_' + phase + '_viz_digitized/' + movie + "/" + str(cur_step) + "/" + str(0) + "/gt" + flag + "/"
+                        current_path = "muscleresults/" + self.args.name + '_' + phase + '_viz_digitized/' + movie + "/" + str(cur_step) + "/" + str(0) + "/gt" + flag + "/"
 
                         themax = torch.unsqueeze(data_retval['max'],dim=2)
                         themin = torch.unsqueeze(data_retval['min'],dim=2)

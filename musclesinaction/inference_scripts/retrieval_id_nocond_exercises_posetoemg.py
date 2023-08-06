@@ -2,16 +2,13 @@ import numpy as np
 import pdb
 import torch
 import musclesinaction.configs.args as args
-import vis.logvis as logvis
+import musclesinaction.vis.logvis as logvis
 import musclesinaction.dataloader.data as data
 import time
 import os
 import random
 import torch
 import tqdm
-import musclesinaction.models.modelbert as transmodel
-import musclesinaction.models.model as model
-import musclesinaction.models.basicconv as convmodel
 
 
 def perspective_projection(points, rotation, translation,
