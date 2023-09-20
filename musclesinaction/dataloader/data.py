@@ -174,8 +174,8 @@ class MyMuscleDataset(torch.utils.data.Dataset):
 
     
     def __getitem__(self, index):
-        
-        filepath =  '../../../vondrick/mia/VIBE/' + self.all_files[index].split("\n")[0]
+
+        filepath =  self.all_files[index].split("\n")[0]
         if self.std == "True":
             emg_values = np.load(filepath + "/emgvaluesstd.npy")
         else:
