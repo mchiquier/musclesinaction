@@ -15,8 +15,8 @@ send-keys "CUDA_VISIBLE_DEVICES=0 python musclesinaction/inference_scripts/infer
 --predemg True \
 --cond True \
 --resume checkpoints/generalization_new_cond_Running_clean/model_100.pth \
---data_path_train ../../../vondrick/mia/VIBE/generalizationexercises/train_Running.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_Running.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationexercises/train_Running.txt \
+--data_path_val musclesinaction/ablation/generalizationexercises/val_Running.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -29,8 +29,8 @@ send-keys "CUDA_VISIBLE_DEVICES=1 python musclesinaction/inference_scripts/infer
 --cond True \
 --predemg True \
 --resume checkpoints/generalization_new_cond_RonddeJambe_clean/model_100.pth \
---data_path_train ../../../vondrick/mia/VIBE/generalizationexercises/train_RonddeJambe.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_RonddeJambe.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationexercises/train_RonddeJambe.txt \
+--data_path_val musclesinaction/ablation/generalizationexercises/val_RonddeJambe.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -43,8 +43,8 @@ send-keys "CUDA_VISIBLE_DEVICES=2 python musclesinaction/inference_scripts/infer
 --cond True \
 --predemg True \
 --resume checkpoints/generalization_new_cond_LegCross_clean/model_100.pth \
---data_path_train ../../../vondrick/mia/VIBE/generalizationexercises/train_LegCross.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_LegCross.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationexercises/train_LegCross.txt \
+--data_path_val musclesinaction/ablation/generalizationexercises/val_LegCross.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -57,8 +57,8 @@ send-keys "CUDA_VISIBLE_DEVICES=3 python musclesinaction/inference_scripts/infer
 --cond True \
 --predemg True \
 --resume checkpoints/generalization_new_cond_LegBack_clean/model_100.pth \
---data_path_train ../../../vondrick/mia/VIBE/generalizationexercises/train_LegBack.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_LegBack.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationexercises/train_LegBack.txt \
+--data_path_val musclesinaction/ablation/generalizationexercises/val_LegBack.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -71,8 +71,8 @@ send-keys "CUDA_VISIBLE_DEVICES=4 python musclesinaction/inference_scripts/infer
 --cond True \
 --predemg True \
 --resume checkpoints/generalization_new_cond_KneeKick_clean/model_100.pth \
---data_path_train ../../../vondrick/mia/VIBE/generalizationexercises/train_KneeKick.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_KneeKick.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationexercises/train_KneeKick.txt \
+--data_path_val musclesinaction/ablation/generalizationexercises/val_KneeKick.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -85,8 +85,8 @@ send-keys "CUDA_VISIBLE_DEVICES=5 python musclesinaction/inference_scripts/infer
 --cond True \
 --predemg True \
 --resume checkpoints/generalization_new_cond_JumpingJack_clean/model_100.pth \
---data_path_train ../../../vondrick/mia/VIBE/generalizationexercises/train_JumpingJack.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_JumpingJack.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationexercises/train_JumpingJack.txt \
+--data_path_val musclesinaction/ablation/generalizationexercises/val_JumpingJack.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -100,8 +100,8 @@ send-keys "CUDA_VISIBLE_DEVICES=6 python musclesinaction/inference_scripts/infer
 --predemg True \
 --cond True \
 --resume checkpoints/generalization_new_cond_HookPunch_clean/model_100.pth \
---data_path_train ../../../vondrick/mia/VIBE/generalizationexercises/train_HookPunch.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_HookPunch.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationexercises/train_HookPunch.txt \
+--data_path_val musclesinaction/ablation/generalizationexercises/val_HookPunch.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -115,8 +115,8 @@ send-keys "CUDA_VISIBLE_DEVICES=7 python musclesinaction/inference_scripts/infer
 --threed True \
 --predemg True \
 --resume checkpoints/generalization_new_cond_HighKick_clean/model_100.pth \
---data_path_train ../../../vondrick/mia/VIBE/generalizationexercises/train_HighKick.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_HighKick.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationexercises/train_HighKick.txt \
+--data_path_val musclesinaction/ablation/generalizationexercises/val_HighKick.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -130,8 +130,8 @@ send-keys "CUDA_VISIBLE_DEVICES=0 python musclesinaction/inference_scripts/infer
 --predemg True \
 --cond True \
 --resume checkpoints/generalization_new_cond_FrontPunch_clean/model_100.pth \
---data_path_train ../../../vondrick/mia/VIBE/generalizationexercises/train_FrontPunch.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_FrontPunch.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationexercises/train_FrontPunch.txt \
+--data_path_val musclesinaction/ablation/generalizationexercises/val_FrontPunch.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -146,8 +146,8 @@ send-keys "CUDA_VISIBLE_DEVICES=1 python musclesinaction/inference_scripts/infer
 --predemg True \
 --cond True \
 --resume checkpoints/generalization_new_cond_FrontKick_clean/model_100.pth \
---data_path_train ../../../vondrick/mia/VIBE/generalizationexercises/train_FrontKick.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_FrontKick.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationexercises/train_FrontKick.txt \
+--data_path_val musclesinaction/ablation/generalizationexercises/val_FrontKick.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -160,8 +160,8 @@ send-keys "CUDA_VISIBLE_DEVICES=1 python musclesinaction/inference_scripts/infer
 --predemg True \
 --cond True \
 --resume checkpoints/generalization_new_cond_ElbowPunch_clean/model_100.pth \
---data_path_train ../../../vondrick/mia/VIBE/generalizationexercises/train_ElbowPunch.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_ElbowPunch.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationexercises/train_ElbowPunch.txt \
+--data_path_val musclesinaction/ablation/generalizationexercises/val_ElbowPunch.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -174,8 +174,8 @@ send-keys "CUDA_VISIBLE_DEVICES=2 python musclesinaction/inference_scripts/infer
 --predemg True \
 --cond True \
 --resume checkpoints/generalization_new_cond_Shuffle_clean/model_100.pth \
---data_path_train ../../../vondrick/mia/VIBE/generalizationexercises/train_Shuffle.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_Shuffle.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationexercises/train_Shuffle.txt \
+--data_path_val musclesinaction/ablation/generalizationexercises/val_Shuffle.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -188,8 +188,8 @@ send-keys "CUDA_VISIBLE_DEVICES=3 python musclesinaction/inference_scripts/infer
 --cond True \
 --predemg True \
 --resume checkpoints/generalization_new_cond_SideLunges_clean/model_100.pth \
---data_path_train ../../../vondrick/mia/VIBE/generalizationexercises/train_SideLunges.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_SideLunges.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationexercises/train_SideLunges.txt \
+--data_path_val musclesinaction/ablation/generalizationexercises/val_SideLunges.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -202,8 +202,8 @@ send-keys "CUDA_VISIBLE_DEVICES=4 python musclesinaction/inference_scripts/infer
 --cond True \
 --predemg True \
 --resume checkpoints/generalization_new_cond_SlowSkater_clean/model_100.pth \
---data_path_train ../../../vondrick/mia/VIBE/generalizationexercises/train_SlowSkater.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_SlowSkater.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationexercises/train_SlowSkater.txt \
+--data_path_val musclesinaction/ablation/generalizationexercises/val_SlowSkater.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -216,7 +216,7 @@ send-keys "CUDA_VISIBLE_DEVICES=5 python musclesinaction/inference_scripts/infer
 --cond True \
 --predemg True \
 --resume checkpoints/generalization_new_cond_Squat_clean/model_100.pth \
---data_path_train ../../../vondrick/mia/VIBE/generalizationexercises/train_Squat.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationexercises/val_Squat.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationexercises/train_Squat.txt \
+--data_path_val musclesinaction/ablation/generalizationexercises/val_Squat.txt" Enter'
 os.system(command)
 time.sleep(20)

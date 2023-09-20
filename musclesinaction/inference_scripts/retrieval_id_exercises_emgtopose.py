@@ -104,7 +104,7 @@ def main(args, logger):
 
     list_of_list_of_val_pose = []
     list_of_list_of_pred_pose = []
-    subjects = os.listdir("../../../vondrick/mia/VIBE/MIADataset")
+    subjects = os.listdir("MIADatasetOfficial/train")
     origtrain = args.data_path_train
     origval = args.data_path_val
     for subj in subjects:

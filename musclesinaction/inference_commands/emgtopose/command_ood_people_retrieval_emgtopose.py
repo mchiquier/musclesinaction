@@ -10,8 +10,8 @@ send-keys "CUDA_VISIBLE_DEVICES=0 python musclesinaction/inference_scripts/retri
 --std False \
 --threed True \
 --predemg True \
---data_path_train ../../../vondrick/mia/VIBE/generalizationpeople/train_Subject2.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationpeople/val_Subject2.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationpeople/train_Subject2.txt \
+--data_path_val musclesinaction/ablation/generalizationpeople/val_Subject2.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -22,8 +22,8 @@ send-keys "CUDA_VISIBLE_DEVICES=1 python musclesinaction/inference_scripts/retri
 --std False \
 --threed True \
 --predemg True \
---data_path_train ../../../vondrick/mia/VIBE/generalizationpeople/train_Subject10.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationpeople/val_Subject10.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationpeople/train_Subject10.txt \
+--data_path_val musclesinaction/ablation/generalizationpeople/val_Subject10.txt" Enter'
 os.system(command)
 
 time.sleep(20)
@@ -35,8 +35,8 @@ send-keys "CUDA_VISIBLE_DEVICES=2 python musclesinaction/inference_scripts/retri
 --std False \
 --threed True \
 --predemg True \
---data_path_train ../../../vondrick/mia/VIBE/generalizationpeople/train_Subject9.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationpeople/val_Subject9.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationpeople/train_Subject9.txt \
+--data_path_val musclesinaction/ablation/generalizationpeople/val_Subject9.txt" Enter'
 os.system(command)
 
 time.sleep(20)
@@ -48,8 +48,8 @@ send-keys "CUDA_VISIBLE_DEVICES=3 python musclesinaction/inference_scripts/retri
 --std False \
 --threed True \
 --predemg True \
---data_path_train ../../../vondrick/mia/VIBE/generalizationpeople/train_Subject7.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationpeople/val_Subject7.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationpeople/train_Subject7.txt \
+--data_path_val musclesinaction/ablation/generalizationpeople/val_Subject7.txt" Enter'
 os.system(command)
 
 command = 'tmux new-session -d -s my_session_clean_David \; send-keys \
@@ -59,8 +59,8 @@ send-keys "CUDA_VISIBLE_DEVICES=4 python musclesinaction/inference_scripts/retri
 --std False \
 --threed True \
 --predemg True \
---data_path_train ../../../vondrick/mia/VIBE/generalizationpeople/train_David.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationpeople/val_David.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationpeople/train_David.txt \
+--data_path_val musclesinaction/ablation/generalizationpeople/val_David.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -71,8 +71,8 @@ send-keys "CUDA_VISIBLE_DEVICES=5 musclesinaction/inference_scripts/retrieval_id
 --std False \
 --threed True \
 --predemg True \
---data_path_train ../../../vondrick/mia/VIBE/generalizationpeople/train_Subject3.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationpeople/val_Subject3.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationpeople/train_Subject3.txt \
+--data_path_val musclesinaction/ablation/generalizationpeople/val_Subject3.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -83,8 +83,8 @@ send-keys "CUDA_VISIBLE_DEVICES=6 python musclesinaction/inference_scripts/retri
 --std False \
 --threed True \
 --predemg True \
---data_path_train ../../../vondrick/mia/VIBE/generalizationpeople/train_Subject4.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationpeople/val_Subject4.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationpeople/train_Subject4.txt \
+--data_path_val musclesinaction/ablation/generalizationpeople/val_Subject4.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -96,8 +96,8 @@ send-keys "CUDA_VISIBLE_DEVICES=7 python musclesinaction/inference_scripts/retri
 --std False \
 --threed True \
 --predemg True \
---data_path_train ../../../vondrick/mia/VIBE/generalizationpeople/train_Subject5.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationpeople/val_Subject5.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationpeople/train_Subject5.txt \
+--data_path_val musclesinaction/ablation/generalizationpeople/val_Subject5.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -109,8 +109,8 @@ send-keys "CUDA_VISIBLE_DEVICES=0 python musclesinaction/inference_scripts/retri
 --std False \
 --threed True \
 --predemg True \
---data_path_train ../../../vondrick/mia/VIBE/generalizationpeople/train_Subject6.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationpeople/val_Subject6.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationpeople/train_Subject6.txt \
+--data_path_val musclesinaction/ablation/generalizationpeople/val_Subject6.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -122,8 +122,8 @@ send-keys "CUDA_VISIBLE_DEVICES=1 python musclesinaction/inference_scripts/infer
 --std False \
 --threed True \
 --predemg True \
---data_path_train ../../../vondrick/mia/VIBE/generalizationpeople/train_Subject8.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationpeople/val_Subject8.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationpeople/train_Subject8.txt \
+--data_path_val musclesinaction/ablation/generalizationpeople/val_Subject8.txt" Enter'
 os.system(command)
 time.sleep(20)
 
@@ -134,8 +134,8 @@ send-keys "CUDA_VISIBLE_DEVICES=1 python musclesinaction/inference_scripts/retri
 --std False \
 --threed True \
 --predemg True \
---data_path_train ../../../vondrick/mia/VIBE/generalizationFinal/train.txt \
---data_path_val ../../../vondrick/mia/VIBE/generalizationFinal/val.txt" Enter'
+--data_path_train musclesinaction/ablation/generalizationFinal/train.txt \
+--data_path_val musclesinaction/ablation/generalizationFinal/val.txt" Enter'
 os.system(command)
 time.sleep(20)
 
