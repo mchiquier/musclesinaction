@@ -25,7 +25,7 @@ The dataset can be found at this link: https://musclesinaction.cs.columbia.edu/M
 To train your own model, run the following command below. By default, it pulls from the musclesinaction/configs/train.yaml file. 
 
 ```commandline
-python musclesinaction/train.py
+$ python musclesinaction/train.py
 ```
 
 The default is to train a pose-to-emg model, defined with 'predemg=True'. To train an emg-to-pose model, simply set it to False. 
@@ -40,7 +40,7 @@ The 'musclesinaction/inference_commands' folder has many different scripts to ev
 For instance, to evaluate the emg-to-pose model per exercise, in-distribution, with our model, you would run the following command: 
 
 ```commandline
-python musclesinaction/inference_commands/emgtopose/command_id_cond_exercises_transf_emgtopose.py
+$ python musclesinaction/inference_commands/emgtopose/command_id_cond_exercises_transf_emgtopose.py
 ```
 
 This will open a tmux session per exercise, and prints the error on the test set for that exercise. 
