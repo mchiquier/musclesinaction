@@ -10,7 +10,9 @@ The dataset can be found at this link: https://musclesinaction.cs.columbia.edu/M
 
 ## Training 
 
-```python musclesinaction/train.py'''
+```commandline
+python musclesinaction/train.py
+```
 
 ## Inference
 
