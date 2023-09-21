@@ -35,7 +35,9 @@ The config file also specifies the information for what data the model is being 
 
 ## Inference
 
-The 'musclesinaction/inference_commands' folder has many different scripts to evaluate our model and baselines, per exercise and per person, for both in-distribution and out-of-distribution experiments. For instance, to evaluate the emg-to-pose model per exercise, in-distribution, with our model, you would run the following command: 
+The 'musclesinaction/inference_commands' folder has many different scripts to evaluate our model and baselines, per exercise and per person, for both in-distribution and out-of-distribution experiments. 
+
+For instance, to evaluate the emg-to-pose model per exercise, in-distribution, with our model, you would run the following command: 
 
 ```commandline
 python musclesinaction/inference_commands/emgtopose/command_id_cond_exercises_transf_emgtopose.py
