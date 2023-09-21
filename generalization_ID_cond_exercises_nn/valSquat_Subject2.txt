@@ -1,7 +1,0 @@
-MIADatasetFinal/val/Ishaan/Squat/104
-MIADatasetFinal/val/Ishaan/Squat/103
-MIADatasetFinal/val/Ishaan/Squat/100
-MIADatasetFinal/val/Ishaan/Squat/102
-MIADatasetFinal/val/Ishaan/Squat/105
-MIADatasetFinal/val/Ishaan/Squat/101
-MIADatasetFinal/val/Ishaan/Squat/106
