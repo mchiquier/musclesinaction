@@ -5,6 +5,11 @@ training_viz_digitized/
 musclesinaction/checkpoints/
 musclesinaction/vibe_data/
 checkpoints_*/
+MIADatasetOffical/
+MIADatasetFinal/
+archive/
+vibe_data/
+vibe_data/*
 logs/
 logs_*/
 wandb/
