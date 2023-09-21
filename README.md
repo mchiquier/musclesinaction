@@ -1,4 +1,4 @@
-# Muscles in Action Source Code
+# Muscles in Action (ICCV 2023)
 
 Code and pre-trained models for the Muscles in Action ICCV 2023 paper. 
 
