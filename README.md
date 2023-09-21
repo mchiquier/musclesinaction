@@ -4,9 +4,10 @@ Code and pre-trained models for the Muscles in Action ICCV 2023 paper.
 
 ## Setup
 
-The expectation is that you unzip the MIA dataset in the same directory as the top-level musclesinaction folder and name it MIADatasetFinal.
+The dataset can be found at this link: https://musclesinaction.cs.columbia.edu/MIADataset.tar.
+Download it, and rename it to MIADatasetFinal. Place this folder in the same directory as the top-level musclesinaction folder.
 
-The dataset can be found at this link: https://musclesinaction.cs.columbia.edu/MIADataset.tar
+
 
 ## Training 
 
