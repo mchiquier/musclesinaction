@@ -22,12 +22,15 @@ The dataset can be found at this link: https://musclesinaction.cs.columbia.edu/M
 
 ## Training 
 
-To train your own model, run the following command below. By default, it pulls from the musclesinaction/configs/train.yaml file. The default is 
-a pose-to-emg model, defined with 'predemg=True'. To train an emg-to-pose model, simply set it to False. The config file also specifies the information for what data the model is being trained on, as well as where checkpoints are saved, etc. Update it for your goals. 
+To train your own model, run the following command below. By default, it pulls from the musclesinaction/configs/train.yaml file. 
 
 ```commandline
 python musclesinaction/train.py
 ```
+
+The default is to train a pose-to-emg model, defined with 'predemg=True'. To train an emg-to-pose model, simply set it to False. 
+
+The config file also specifies the information for what data the model is being trained on, as well as where checkpoints are saved, etc. Update it for your goals. 
 
 
 ## Inference
