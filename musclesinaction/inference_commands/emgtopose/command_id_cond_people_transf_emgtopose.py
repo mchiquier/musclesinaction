@@ -10,7 +10,7 @@ send-keys "CUDA_VISIBLE_DEVICES=0 python musclesinaction/inference_scripts/infer
 --threed True \
 --cond True \
 --predemg False \
---resume checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
+--resume pretrained-checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
 --data_path_train musclesinaction/ablation/generalization_ID_nocond_people/train.txt \
 --data_path_val musclesinaction/ablation/generalization_ID_nocond_people/valSubject1.txt" Enter'
 os.system(command)
@@ -24,7 +24,7 @@ send-keys "CUDA_VISIBLE_DEVICES=1 python musclesinaction/inference_scripts/infer
 --std False \
 --threed True \
 --predemg False \
---resume checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
+--resume pretrained-checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
 --data_path_train musclesinaction/ablation/generalization_ID_nocond_people/train.txt \
 --data_path_val musclesinaction/ablation/generalization_ID_nocond_people/valSubject2.txt" Enter'
 os.system(command)
@@ -37,7 +37,7 @@ send-keys "CUDA_VISIBLE_DEVICES=2 python musclesinaction/inference_scripts/infer
 --std False \
 --threed True \
 --predemg False \
---resume checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
+--resume pretrained-checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
 --data_path_train musclesinaction/ablation/generalization_ID_nocond_people/train.txt \
 --data_path_val musclesinaction/ablation/generalization_ID_nocond_people/valSubject3.txt" Enter'
 os.system(command)
@@ -50,7 +50,7 @@ send-keys "CUDA_VISIBLE_DEVICES=3 python musclesinaction/inference_scripts/infer
 --std False \
 --threed True \
 --predemg False \
---resume checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
+--resume pretrained-checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
 --data_path_train musclesinaction/ablation/generalization_ID_nocond_people/train.txt \
 --data_path_val musclesinaction/ablation/generalization_ID_nocond_people/valSubject4.txt" Enter'
 os.system(command)
@@ -63,7 +63,7 @@ send-keys "CUDA_VISIBLE_DEVICES=4 python musclesinaction/inference_scripts/infer
 --std False \
 --threed True \
 --predemg False \
---resume checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
+--resume pretrained-checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
 --data_path_train musclesinaction/ablation/generalization_ID_nocond_people/train.txt \
 --data_path_val musclesinaction/ablation/generalization_ID_nocond_people/valSubject5.txt" Enter'
 os.system(command)
@@ -76,7 +76,7 @@ send-keys "CUDA_VISIBLE_DEVICES=5 python musclesinaction/inference_scripts/infer
 --std False \
 --threed True \
 --predemg False \
---resume checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
+--resume pretrained-checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
 --data_path_train musclesinaction/ablation/generalization_ID_nocond_people/train.txt \
 --data_path_val musclesinaction/ablation/generalization_ID_nocond_people/valSubject6.txt" Enter'
 os.system(command)
@@ -90,7 +90,7 @@ send-keys "CUDA_VISIBLE_DEVICES=6 python musclesinaction/inference_scripts/infer
 --std False \
 --threed True \
 --predemg False \
---resume checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
+--resume pretrained-checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
 --data_path_train musclesinaction/ablation/generalization_ID_nocond_people/train.txt \
 --data_path_val musclesinaction/ablation/generalization_ID_nocond_people/valSubject7.txt" Enter'
 os.system(command)
@@ -104,7 +104,7 @@ send-keys "CUDA_VISIBLE_DEVICES=7 python musclesinaction/inference_scripts/infer
 --std False \
 --threed True \
 --predemg False \
---resume checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
+--resume pretrained-checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
 --data_path_train musclesinaction/ablation/generalization_ID_nocond_people/train.txt \
 --data_path_val musclesinaction/ablation/generalization_ID_nocond_people/valSubject8.txt" Enter'
 os.system(command)
@@ -118,7 +118,7 @@ send-keys "CUDA_VISIBLE_DEVICES=0 python musclesinaction/inference_scripts/infer
 --std False \
 --threed True \
 --predemg False \
---resume checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
+--resume pretrained-checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
 --data_path_train musclesinaction/ablation/generalization_ID_nocond_people/train.txt \
 --data_path_val musclesinaction/ablation/generalization_ID_nocond_people/valSubject9.txt" Enter'
 os.system(command)
@@ -133,7 +133,7 @@ send-keys "CUDA_VISIBLE_DEVICES=1 python musclesinaction/inference_scripts/infer
 --std False \
 --threed True \
 --predemg False \
---resume checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
+--resume pretrained-checkpoints/generalization_new_cond_clean_emgtopose_threed/model_200.pth \
 --data_path_train musclesinaction/ablation/generalization_ID_nocond_people/train.txt \
 --data_path_val musclesinaction/ablation/generalization_ID_nocond_people/valSubject10.txt" Enter'
 os.system(command)
