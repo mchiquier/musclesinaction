@@ -16,7 +16,7 @@ $ conda activate musclesinaction
 
 Dataset: 
 
-The dataset can be found at this link: https://musclesinaction.cs.columbia.edu/MIADataset.tar. Download it, and rename it to MIADatasetFinal. Place this folder in the same directory as the top-level musclesinaction folder.
+The dataset can be found at this link: https://musclesinaction.cs.columbia.edu/MIADataset.tar. Download it, and place the folder in the same directory as the top-level musclesinaction folder.
 
 
 
