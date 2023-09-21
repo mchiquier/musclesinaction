@@ -28,4 +28,12 @@ python musclesinaction/train.py
 
 ## Inference
 
+The 'inference_commands' folder has many different scripts to evaluate our model and baselines, per exercise and per person. For instance, to evaluate the emg-to-pose model per exercise, in-distribution, with our model, you would run the following command: 
+
+```commandline
+python musclesinaction/inference_commands/emgtopose/command_id_cond_exercises_transf_emgtopose.py
+```
+
+This will open a tmux session per exercise, and prints the error on the test set for that exercise. 
+
 See the musclesinaction/inference_scripts folder. 
